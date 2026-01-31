@@ -1,0 +1,13 @@
+{
+  "name": "@rangexp/theme",
+  "version": "0.0.1",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src --fix"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.3"
+  }
+}

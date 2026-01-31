@@ -5,8 +5,12 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@rangexp/*": ["../packages/*/src"]
-    }
+      "@rangexp/theme": ["../packages/theme/src/index.ts"],
+      "@rangexp/types": ["../packages/types/src/index.ts"],
+      "@rangexp/api-client": ["../packages/api-client/src/index.ts"]
+    },
+    "moduleResolution": "bundler",
+    "module": "ESNext"
   },
-  "include": ["src/**/*", "*.config.js"]
+  "include": ["src/**/*", "*.config.js", "../packages/**/src/*.ts"]
 }

@@ -1,19 +1,40 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface UserState {
-  userId: string | null;
+export type GlucoseUnit = 'MG_DL' | 'MMOL_L';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
   xp: number;
-  streak: number;
   level: number;
+  streak: number;
   isPremium: boolean;
   rexCustomization: string;
-  glucoseUnit: "MG_DL" | "MMOL_L";
+  glucoseUnit: GlucoseUnit;
+  notificationsEnabled: boolean;
+  createdAt: string;
+  friendsCount?: number;
+}
+
+interface UserState {
+  user: User | null;
+  isAuthenticated: boolean;
+  notificationsCount: number;
+  recentAchievements: number;
+  friendCount: number;
   
   // Actions
-  setUser: (user: Partial<UserState>) => void;
+  setUser: (user: User | null) => void;
+  updateUser: (updates: Partial<User>) => void;
   addXp: (amount: number) => void;
   updateStreak: (days: number) => void;
+  setNotificationsCount: (count: number) => void;
+  setRecentAchievements: (count: number) => void;
+  setFriendCount: (count: number) => void;
   setPremium: (isPremium: boolean) => void;
   logout: () => void;
 }
@@ -21,44 +42,65 @@ interface UserState {
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
-      userId: null,
-      xp: 0,
-      streak: 0,
-      level: 1,
-      isPremium: false,
-      rexCustomization: "default",
-      glucoseUnit: "MG_DL",
+      user: null,
+      isAuthenticated: false,
+      notificationsCount: 0,
+      recentAchievements: 0,
+      friendCount: 0,
 
-      setUser: (userData) => set((state) => ({ ...state, ...userData })),
+      setUser: (user) => set({ 
+        user, 
+        isAuthenticated: !!user,
+        friendCount: user?.friendsCount || 0,
+      }),
       
-      addXp: (amount) => {
-        const newXp = get().xp + amount;
+      updateUser: (updates) => set((state) => ({
+        user: state.user ? { ...state.user, ...updates } : null,
+      })),
+      
+      addXp: (amount) => set((state) => {
+        if (!state.user) return state;
+        
+        const newXp = state.user.xp + amount;
         const newLevel = Math.floor(newXp / 100) + 1;
-        set({ xp: newXp, level: newLevel });
-      },
+        
+        return {
+          user: {
+            ...state.user,
+            xp: newXp,
+            level: newLevel,
+          },
+        };
+      }),
       
-      updateStreak: (days) => set({ streak: days }),
+      updateStreak: (days) => set((state) => ({
+        user: state.user ? { ...state.user, streak: days } : null,
+      })),
       
-      setPremium: (isPremium) => set({ isPremium }),
+      setNotificationsCount: (count) => set({ notificationsCount: count }),
+      
+      setRecentAchievements: (count) => set({ recentAchievements: count }),
+      
+      setFriendCount: (count) => set({ friendCount: count }),
+      
+      setPremium: (isPremium) => set((state) => ({
+        user: state.user ? { ...state.user, isPremium } : null,
+      })),
       
       logout: () => set({
-        userId: null,
-        xp: 0,
-        streak: 0,
-        level: 1,
-        isPremium: false,
+        user: null,
+        isAuthenticated: false,
+        notificationsCount: 0,
+        recentAchievements: 0,
+        friendCount: 0,
       }),
     }),
     {
-      name: "rangexp-user",
+      name: 'rangexp-user',
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        userId: state.userId,
-        xp: state.xp,
-        streak: state.streak,
-        level: state.level,
-        isPremium: state.isPremium,
-        rexCustomization: state.rexCustomization,
-        glucoseUnit: state.glucoseUnit,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
       }),
     }
   )

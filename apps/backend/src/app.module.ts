@@ -10,6 +10,7 @@ import { GamificationModule } from "./modules/gamification/gamification.module";
 import { SocialModule } from "./modules/social/social.module";
 import { AchievementsModule } from "./modules/achievements/achievements.module";
 import { EducationModule } from "./modules/education/education.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { EducationModule } from "./modules/education/education.module";
     SocialModule,
     AchievementsModule,
     EducationModule,
+    NotificationsModule,
   ],
   providers: [PrismaService],
 })
