@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GlucoseUnit {
+  MG_DL
+  MMOL_L
+}
+
+enum Theme {
+  LIGHT
+  DARK
+}
+
+enum Language {
+  ES
+  EN
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  password         String?
+  firstName        String?
+  lastName         String?
+  avatarUrl        String?
+  xp               Int      @default(0)           // Total XP
+  streak           Int      @default(0)           // Current streak days
+  lastActiveAt     DateTime?                      // Last activity timestamp
+  level            Int      @default(1)           // User level based on XP
+  glucoseUnit      GlucoseUnit @default(MG_DL)
+  theme            Theme    @default(LIGHT)
+  language         Language @default(ES)
+  isPremium        Boolean  @default(false)
+  premiumExpiresAt DateTime?
+  rexCustomization String   @default("default")   // Rex skin/appearance
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  glucoseReadings  GlucoseReading[]
+  achievements     UserAchievement[]
+  friendsAsRequester  Friendship[] @relation("Requester")
+  friendsAsReceiver   Friendship[] @relation("Receiver")
+  sentActivities      ActivityFeed[] @relation("Sender")
+  receivedActivities  ActivityFeed[] @relation("Receiver")
+  educationProgress   EducationProgress[]
+  notifications       Notification[]
+}
+
+model GlucoseReading {
+  id          String   @id @default(cuid())
+  userId      String
+  value       Int      // mg/dL or mmol/L
+  unit        GlucoseUnit @default(MG_DL)
+  note        String?
+  recordedAt  DateTime @default(now())
+  context     String?  // BEFORE_MEAL, AFTER_MEAL, BEDTIME, etc.
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  code        String   @unique  // e.g., "FIRST_LOG", "WEEK_STREAK"
+  name        String
+  description String
+  xpReward    Int      @default(0)
+  iconUrl     String?
+  tier        String   @default("bronze")  // bronze, silver, gold, platinum
+  condition   Json     // JSON condition for unlocking
+  createdAt   DateTime @default(now())
+
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model Friendship {
+  id          String   @id @default(cuid())
+  requesterId String
+  receiverId  String
+  status      String   @default("pending")  // pending, accepted, rejected
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  requester   User     @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+}
+
+model ActivityFeed {
+  id          String   @id @default(cuid())
+  senderId    String
+  receiverId  String?  // null = public feed
+  type        String   // "LOG_READING", "UNLOCK_ACHIEVEMENT", "NEW_STREAK"
+  message     String   // Pre-rendered message (e.g., "Juan logged 120 mg/dL ⭐")
+  data        Json?    // Extra data for rendering
+  createdAt   DateTime @default(now())
+  sender      User     @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User?    @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+}
+
+model EducationModule {
+  id          String   @id @default(cuid())
+  code        String   @unique  // e.g., "BASIC_01", "INTERMEDIATE_01"
+  title       String
+  description String
+  level       Int      @default(1)  // 1=beginner, 2=intermediate, 3=advanced
+  type        String   @default("content")  // content, quiz, exercise
+  content     Json     // Rich content (text, video, images)
+  xpReward    Int      @default(0)
+  order       Int      @default(0)
+  isPremium   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  progress    EducationProgress[]
+}
+
+model EducationProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  moduleId    String
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  score       Int?     // For quizzes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module      EducationModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "ACHIEVEMENT", "FRIEND_REQUEST", "STREAK_REMINDER"
+  title       String
+  message     String
+  data        Json?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
