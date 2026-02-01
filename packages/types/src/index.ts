@@ -4,6 +4,7 @@ export interface User {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  avatarUrl: string | null;
   xp: number;
   streak: number;
   level: number;

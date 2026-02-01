@@ -5,7 +5,7 @@ import { theme } from '@rangexp/theme';
 import { Rex } from '../../components/Rex';
 import { useAddGlucose } from '../../hooks/useGlucose';
 import { useUserStore } from '../../store';
-import { GlucoseStatus } from '../../store/glucoseStore';
+import { GlucoseStatus, GlucoseContext } from '../../store/glucoseStore';
 
 const contexts = [
   { id: 'fasting', label: 'En ayunas', icon: '🌅' },
@@ -56,7 +56,7 @@ export default function LogScreen() {
     try {
       await addGlucose.mutateAsync({
         value: numericValue,
-        context: selectedContext,
+        context: selectedContext as GlucoseContext,
         notes: notes || undefined,
       });
 

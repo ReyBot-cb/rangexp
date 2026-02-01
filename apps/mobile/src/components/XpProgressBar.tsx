@@ -22,7 +22,7 @@ export function XpProgressBar({
   const progress = Math.min(currentXp / nextLevelXp, 1);
   const xpToNext = nextLevelXp - currentXp;
   
-  const animatedProgress = useRef(new Animated.Value(0)).current;
+  const animatedProgress = useRef(new Animated.Value(animated ? 0 : progress)).current;
 
   useEffect(() => {
     if (animated) {
@@ -31,13 +31,15 @@ export function XpProgressBar({
         duration: 800,
         useNativeDriver: false,
       }).start();
+    } else {
+      animatedProgress.setValue(progress);
     }
   }, [progress, animated]);
 
-  const width = animated ? animatedProgress.interpolate({
+  const width = animatedProgress.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
-  }) : `${progress * 100}%`;
+  });
 
   return (
     <View style={[styles.container, style]}>
@@ -66,7 +68,7 @@ export function XpProgressBar({
             styles.glow,
             {
               left: width,
-              opacity: animated ? animatedProgress : progress,
+              opacity: animatedProgress,
             },
           ]}
         />
@@ -110,7 +112,7 @@ const styles = StyleSheet.create({
   },
   track: {
     height: 14,
-    backgroundColor: theme.colors.background.secondary,
+    backgroundColor: theme.colors.background.light.secondary,
     borderRadius: 7,
     overflow: 'hidden',
   },
@@ -125,7 +127,7 @@ const styles = StyleSheet.create({
     height: 18,
     backgroundColor: theme.colors.gamification.xpLight,
     borderRadius: 9,
-    blurRadius: 8,
+    opacity: 0.8,
   },
   details: {
     flexDirection: 'column',

@@ -24,12 +24,16 @@ export interface AchievementCategory {
   totalCount: number;
 }
 
+interface AchievementsResponse {
+  achievements: Achievement[];
+}
+
 export function useAchievements() {
   return useQuery({
     queryKey: ['achievements'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/achievements');
-      return data.achievements as Achievement[];
+      const { data } = await apiClient.get<AchievementsResponse>('/achievements');
+      return data.achievements;
     },
     staleTime: 5 * 60 * 1000,
   });

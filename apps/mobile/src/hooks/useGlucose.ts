@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useGlucoseStore, GlucoseContext } from '../store/glucoseStore';
+import { useGlucoseStore, GlucoseContext, GlucoseReading } from '../store/glucoseStore';
 import { apiClient } from '@rangexp/api-client';
+
+interface GlucoseReadingsResponse {
+  readings: GlucoseReading[];
+}
 
 export function useGlucoseReadings(options?: { startDate?: string; endDate?: string }) {
   const { setReadings } = useGlucoseStore();
@@ -8,7 +12,14 @@ export function useGlucoseReadings(options?: { startDate?: string; endDate?: str
   return useQuery({
     queryKey: ['glucose-readings', options],
     queryFn: async () => {
-      const { data } = await apiClient.get('/glucose', { params: options });
+      let url = '/glucose';
+      if (options?.startDate || options?.endDate) {
+        const params = new URLSearchParams();
+        if (options.startDate) params.append('startDate', options.startDate);
+        if (options.endDate) params.append('endDate', options.endDate);
+        url += `?${params.toString()}`;
+      }
+      const { data } = await apiClient.get<GlucoseReadingsResponse>(url);
       setReadings(data.readings);
       return data.readings;
     },

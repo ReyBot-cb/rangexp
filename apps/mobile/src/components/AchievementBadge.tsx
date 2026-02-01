@@ -105,7 +105,7 @@ export function AchievementBadge({
           {
             width: badgeSize,
             height: badgeSize,
-            backgroundColor: unlocked ? color : theme.colors.background.secondary,
+            backgroundColor: unlocked ? color : theme.colors.background.light.secondary,
             borderColor: unlocked ? color : theme.colors.text.disabled.light,
             transform: [
               { scale: scaleAnim },
@@ -170,7 +170,6 @@ export function AchievementBadge({
           },
         ]}
         numberOfLines={2}
-        textAlign="center"
       >
         {name}
       </Text>
@@ -219,7 +218,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     width: 50,
     height: 4,
-    backgroundColor: theme.colors.background.secondary,
+    backgroundColor: theme.colors.background.light.secondary,
     borderRadius: 2,
     overflow: 'hidden',
   },

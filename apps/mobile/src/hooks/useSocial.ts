@@ -2,6 +2,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSocialStore } from '../store/socialStore';
 import { apiClient } from '@rangexp/api-client';
 import type { Friend, FriendRequest, ActivityItem } from '../store/socialStore';
+import type { User } from '@rangexp/types';
+
+interface FriendsResponse {
+  friends: Friend[];
+}
+
+interface FriendRequestsResponse {
+  requests: FriendRequest[];
+}
+
+interface ActivityFeedResponse {
+  activities: ActivityItem[];
+}
+
+interface SearchUsersResponse {
+  users: User[];
+}
 
 export function useFriends() {
   const { setFriends } = useSocialStore();
@@ -9,9 +26,9 @@ export function useFriends() {
   return useQuery({
     queryKey: ['friends'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/friends');
+      const { data } = await apiClient.get<FriendsResponse>('/friends');
       setFriends(data.friends);
-      return data.friends as Friend[];
+      return data.friends;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -23,9 +40,9 @@ export function useFriendRequests() {
   return useQuery({
     queryKey: ['friend-requests'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/friends/requests');
+      const { data } = await apiClient.get<FriendRequestsResponse>('/friends/requests');
       setPendingRequests(data.requests);
-      return data.requests as FriendRequest[];
+      return data.requests;
     },
     staleTime: 30 * 1000,
   });
@@ -37,9 +54,9 @@ export function useActivityFeed() {
   return useQuery({
     queryKey: ['activity-feed'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/feed');
+      const { data } = await apiClient.get<ActivityFeedResponse>('/feed');
       setActivityFeed(data.activities);
-      return data.activities as ActivityItem[];
+      return data.activities;
     },
     staleTime: 60 * 1000,
     refetchInterval: 60 * 1000,
@@ -113,7 +130,7 @@ export function useLikeActivity() {
 export function useSearchUsers() {
   return useMutation({
     mutationFn: async (query: string) => {
-      const { data } = await apiClient.get('/users/search', { params: { q: query } });
+      const { data } = await apiClient.get<SearchUsersResponse>(`/users/search?q=${encodeURIComponent(query)}`);
       return data.users;
     },
   });

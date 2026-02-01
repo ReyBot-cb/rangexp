@@ -18,11 +18,16 @@ export default function ProfileScreen() {
       '¿Estás seguro de que quieres salir?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Cerrar sesión', 
+        {
+          text: 'Cerrar sesión',
           style: 'destructive',
           onPress: async () => {
-            await logoutMutation.mutateAsync();
+            try {
+              await logoutMutation.mutateAsync();
+            } catch (error) {
+              // Si el API falla, igualmente hacemos logout local
+              console.log('API logout failed, proceeding with local logout');
+            }
             router.replace('/(auth)/login');
           }
         },
