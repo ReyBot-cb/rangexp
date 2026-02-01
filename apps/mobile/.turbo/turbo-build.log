@@ -1,0 +1,52 @@
+
+> rangexp-mobile@0.0.1 build /Users/alejandrozdut/Documents/rangexp/apps/mobile
+> tsc --noEmit
+
+src/app/(app)/log.tsx(59,9): error TS2322: Type 'string' is not assignable to type 'GlucoseContext'.
+src/components/AchievementBadge.tsx(108,73): error TS2339: Property 'secondary' does not exist on type '{ light: { primary: string; secondary: string; card: string; }; dark: { primary: string; secondary: string; card: string; }; }'.
+src/components/AchievementBadge.tsx(173,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Type '{ children: string; style: ({ fontFamily: string; fontSize: number; textAlign: "center"; } | { color: string; })[]; numberOfLines: number; textAlign: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Text> & Readonly<TextProps>'.
+      Property 'textAlign' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Text> & Readonly<TextProps>'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Type '{ children: string; style: ({ fontFamily: string; fontSize: number; textAlign: "center"; } | { color: string; })[]; numberOfLines: number; textAlign: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Text> & Readonly<TextProps>'.
+      Property 'textAlign' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Text> & Readonly<TextProps>'.
+src/components/AchievementBadge.tsx(222,46): error TS2339: Property 'secondary' does not exist on type '{ light: { primary: string; secondary: string; card: string; }; dark: { primary: string; secondary: string; card: string; }; }'.
+src/components/Rex.tsx(283,46): error TS2339: Property 'card' does not exist on type '{ light: { primary: string; secondary: string; card: string; }; dark: { primary: string; secondary: string; card: string; }; }'.
+src/components/XpProgressBar.tsx(55,15): error TS2322: Type '{ width: string | Animated.AnimatedInterpolation<string | number>; backgroundColor: string; }' is not assignable to type 'false | "" | Value | AnimatedInterpolation<string | number> | RegisteredStyle<ViewStyle> | WithAnimatedObject<ViewStyle> | WithAnimatedArray<...> | readonly (false | ... 6 more ... | undefined)[] | null | undefined'.
+  Types of property 'width' are incompatible.
+    Type 'string | AnimatedInterpolation<string | number>' is not assignable to type 'number | "auto" | Value | AnimatedInterpolation<string | number> | `${number}%` | WithAnimatedObject<AnimatedNode> | null | undefined'.
+src/components/XpProgressBar.tsx(67,13): error TS2322: Type '{ left: string | Animated.AnimatedInterpolation<string | number>; opacity: number | Animated.Value; }' is not assignable to type 'false | "" | Value | AnimatedInterpolation<string | number> | RegisteredStyle<ViewStyle> | WithAnimatedObject<ViewStyle> | WithAnimatedArray<...> | readonly (false | ... 6 more ... | undefined)[] | null | undefined'.
+  Types of property 'left' are incompatible.
+    Type 'string | AnimatedInterpolation<string | number>' is not assignable to type 'number | "auto" | Value | AnimatedInterpolation<string | number> | `${number}%` | WithAnimatedObject<AnimatedNode> | null | undefined'.
+      Type 'string' is not assignable to type 'number | "auto" | Value | AnimatedInterpolation<string | number> | `${number}%` | WithAnimatedObject<AnimatedNode> | null | undefined'.
+src/components/XpProgressBar.tsx(113,46): error TS2339: Property 'secondary' does not exist on type '{ light: { primary: string; secondary: string; card: string; }; dark: { primary: string; secondary: string; card: string; }; }'.
+src/components/XpProgressBar.tsx(128,5): error TS2345: Argument of type '{ container: { flexDirection: "row"; alignItems: "center"; gap: number; }; levelBadge: { shadowColor: string; shadowOffset: { width: number; height: number; }; shadowOpacity: number; shadowRadius: number; ... 6 more ...; justifyContent: "center"; }; ... 7 more ...; remaining: { ...; }; }' is not assignable to parameter of type '{ container: { flexDirection: "row"; alignItems: "center"; gap: number; }; levelBadge: { shadowColor: string; shadowOffset: { width: number; height: number; }; shadowOpacity: number; shadowRadius: number; ... 6 more ...; justifyContent: "center"; }; ... 7 more ...; remaining: { ...; }; } & NamedStyles<...>'.
+  Property 'glow' is incompatible with index signature.
+    Object literal may only specify known properties, and 'blurRadius' does not exist in type 'ViewStyle | TextStyle | ImageStyle'.
+src/hooks/useAchievements.ts(31,40): error TS2551: Property 'get' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'GET'?
+src/hooks/useGlucose.ts(11,40): error TS2551: Property 'get' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'GET'?
+src/hooks/useGlucose.ts(35,25): error TS2551: Property 'post' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'POST'?
+src/hooks/useGlucose.ts(55,23): error TS2551: Property 'delete' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'DELETE'?
+src/hooks/useSocial.ts(12,40): error TS2551: Property 'get' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'GET'?
+src/hooks/useSocial.ts(26,40): error TS2551: Property 'get' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'GET'?
+src/hooks/useSocial.ts(40,40): error TS2551: Property 'get' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'GET'?
+src/hooks/useSocial.ts(54,40): error TS2551: Property 'post' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'POST'?
+src/hooks/useSocial.ts(71,40): error TS2551: Property 'post' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'POST'?
+src/hooks/useSocial.ts(88,23): error TS2551: Property 'delete' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'DELETE'?
+src/hooks/useSocial.ts(104,23): error TS2551: Property 'post' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'POST'?
+src/hooks/useSocial.ts(116,40): error TS2551: Property 'get' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'GET'?
+src/hooks/useUser.ts(11,40): error TS2551: Property 'get' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'GET'?
+src/hooks/useUser.ts(25,40): error TS2551: Property 'post' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'POST'?
+src/hooks/useUser.ts(41,40): error TS2551: Property 'post' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'POST'?
+src/hooks/useUser.ts(57,23): error TS2551: Property 'post' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'POST'?
+src/hooks/useUser.ts(72,40): error TS2551: Property 'put' does not exist on type 'Client<paths, `${string}/${string}`>'. Did you mean 'PUT'?
+../../packages/api-client/src/index.ts(23,15): error TS2339: Property 'headers' does not exist on type 'MiddlewareCallbackParams'.
+../../packages/theme/src/themes.ts(2,10): error TS2303: Circular definition of import alias 'Theme'.
+../../packages/theme/src/themes.ts(146,14): error TS2323: Cannot redeclare exported variable 'LightTheme'.
+../../packages/theme/src/themes.ts(161,14): error TS2323: Cannot redeclare exported variable 'DarkTheme'.
+../../packages/theme/src/themes.ts(177,10): error TS2323: Cannot redeclare exported variable 'LightTheme'.
+../../packages/theme/src/themes.ts(177,10): error TS2484: Export declaration conflicts with exported declaration of 'LightTheme'.
+../../packages/theme/src/themes.ts(177,22): error TS2323: Cannot redeclare exported variable 'DarkTheme'.
+../../packages/theme/src/themes.ts(177,22): error TS2484: Export declaration conflicts with exported declaration of 'DarkTheme'.
+ ELIFECYCLE  Command failed with exit code 2.

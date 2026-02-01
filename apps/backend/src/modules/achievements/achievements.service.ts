@@ -1,5 +1,5 @@
 import { Injectable, Inject, forwardRef } from "@nestjs/common";
-import { PrismaService } from "../../../prisma/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
 import { GamificationService } from "../gamification/gamification.service";
 import { SocialService } from "../social/social.service";
 

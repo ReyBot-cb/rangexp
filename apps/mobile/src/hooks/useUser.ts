@@ -38,7 +38,12 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: async (userData: { email: string; password: string; name: string }) => {
-      const { data } = await apiClient.post('/auth/register', userData);
+      // Backend expects firstName, not name
+      const { data } = await apiClient.post('/auth/register', {
+        email: userData.email,
+        password: userData.password,
+        firstName: userData.name,
+      });
       return data;
     },
     onSuccess: (data) => {

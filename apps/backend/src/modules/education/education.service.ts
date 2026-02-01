@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
-import { PrismaService } from "../../../prisma/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
 import {
   CreateEducationModuleDto,
   SubmitQuizDto,
@@ -117,10 +117,10 @@ export class EducationService {
     // Simple quiz scoring - in production, this would validate answers against correct ones
     const score = dto.score || this.calculateQuizScore(dto.answers, module.content);
 
-    const progress = await this.markAsCompleted(userId, moduleId, { score });
+    await this.markAsCompleted(userId, moduleId, { score });
 
     return {
-      module: progress.module,
+      module,
       score,
       passed: score >= 70,
       xpEarned: score >= 70 ? module.xpReward : 0,

@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { PrismaService } from "./prisma/prisma.service";
+import { PrismaModule } from "./prisma/prisma.module";
 import { CommonModule } from "./common/common.module";
 import { HealthModule } from "./modules/health/health.module";
 import { AuthModule } from "./modules/auth/auth.module";
@@ -15,6 +15,7 @@ import { NotificationsModule } from "./modules/notifications/notifications.modul
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
     CommonModule,
     HealthModule,
     AuthModule,
@@ -26,6 +27,5 @@ import { NotificationsModule } from "./modules/notifications/notifications.modul
     EducationModule,
     NotificationsModule,
   ],
-  providers: [PrismaService],
 })
 export class AppModule {}

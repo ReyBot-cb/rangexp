@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { GlucoseService } from "./glucose.service";
-import { PrismaService } from "../../../prisma/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
 import { NotFoundException, ForbiddenException } from "@nestjs/common";
 
 describe("GlucoseService", () => {
@@ -137,7 +137,7 @@ describe("GlucoseService", () => {
     it("should return null stats if no readings", async () => {
       mockPrisma.glucoseReading.findMany.mockResolvedValue([]);
 
-      const result = await this.service.getStats("user-1", 7);
+      const result = await service.getStats("user-1", 7);
 
       expect(result.average).toBeNull();
       expect(result.readingsCount).toBe(0);

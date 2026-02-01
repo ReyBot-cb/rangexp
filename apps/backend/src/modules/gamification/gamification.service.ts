@@ -1,5 +1,5 @@
 import { Injectable, Inject, forwardRef } from "@nestjs/common";
-import { PrismaService } from "../../../prisma/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
 import { AddXpDto } from "./dto/gamification.dto";
 import { AchievementsService } from "../achievements/achievements.service";
 

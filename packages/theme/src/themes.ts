@@ -1,5 +1,4 @@
 // RangeXp Theme Tokens
-import { Theme } from './index';
 
 export const theme = {
   colors: {
@@ -173,5 +172,4 @@ export const DarkTheme = {
   },
 };
 
-export type { Theme };
-export { LightTheme, DarkTheme };
+export type Theme = typeof theme;

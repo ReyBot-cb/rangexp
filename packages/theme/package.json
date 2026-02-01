@@ -4,10 +4,14 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "build": "tsc",
     "lint": "eslint src --fix"
   },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
   "devDependencies": {
+    "@types/react": "~18.3.0",
     "typescript": "^5.1.3"
   }
 }

@@ -1,6 +1,6 @@
 import { IsEnum, IsOptional, IsString, IsNumber, Min } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { GlucoseUnit, Theme, Language } from "../auth/dto/auth.dto";
+import { GlucoseUnit, Theme, Language } from "../../auth/dto/auth.dto";
 
 export class UpdateSettingsDto {
   @ApiPropertyOptional({ enum: GlucoseUnit })

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { NotificationsService } from "./notifications.service";
-import { PrismaService } from "../../../prisma/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
 
 describe("NotificationsService", () => {
   let service: NotificationsService;
@@ -198,7 +198,7 @@ describe("NotificationsService", () => {
       );
 
       expect(result.type).toBe("ACHIEVEMENT");
-      expect(result.data?.xpReward).toBe(50);
+      expect((result.data as { xpReward?: number })?.xpReward).toBe(50);
     });
   });
 });

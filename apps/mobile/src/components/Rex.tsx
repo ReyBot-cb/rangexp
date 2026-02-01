@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   speechBubble: {
     position: 'absolute',
     top: -50,
-    backgroundColor: theme.colors.background.card.light,
+    backgroundColor: theme.colors.background.light.card,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: theme.borderRadius.md,

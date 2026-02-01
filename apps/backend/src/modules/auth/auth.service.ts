@@ -1,12 +1,13 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from "@nestjs/common";
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException, Logger } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
-import { PrismaService } from "../../../prisma/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
 import { RegisterDto, LoginDto, UpdateProfileDto } from "./dto/auth.dto";
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -14,45 +15,53 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    try {
+      this.logger.log(`Attempting to register user: ${dto.email}`);
 
-    if (existingUser) {
-      throw new ConflictException("Email already registered");
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (existingUser) {
+        throw new ConflictException("Email already registered");
+      }
+
+      this.logger.log('Hashing password...');
+      const saltRounds = parseInt(this.configService.get<string>("BCRYPT_SALT_ROUNDS") || "10", 10);
+      const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
+
+      this.logger.log('Creating user in database...');
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          lastActiveAt: new Date(),
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          xp: true,
+          level: true,
+          streak: true,
+          createdAt: true,
+        },
+      });
+
+      this.logger.log(`User created: ${user.id}`);
+      const tokens = await this.generateTokens(user.id, user.email);
+
+      return {
+        user,
+        ...tokens,
+      };
+    } catch (error) {
+      this.logger.error(`Registration failed: ${error.message}`, error.stack);
+      throw error;
     }
-
-    const hashedPassword = await bcrypt.hash(
-      dto.password,
-      this.configService.get<number>("BCRYPT_SALT_ROUNDS") || 10,
-    );
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashedPassword,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        lastActiveAt: new Date(),
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        xp: true,
-        level: true,
-        streak: true,
-        createdAt: true,
-      },
-    });
-
-    const tokens = await this.generateTokens(user.id, user.email);
-
-    return {
-      user,
-      ...tokens,
-    };
   }
 
   async login(dto: LoginDto) {

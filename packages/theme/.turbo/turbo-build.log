@@ -1,0 +1,46 @@
+
+> @rangexp/theme@0.0.1 build /Users/alejandrozdut/Documents/rangexp/packages/theme
+> tsc
+
+src/components.tsx(85,16): error TS2339: Property 'button' does not exist on type '{ backgroundColor: string; textColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { ...; } | { ...; }'.
+  Property 'button' does not exist on type '{ backgroundColor: string; textColor: string; }'.
+src/components.tsx(89,31): error TS2339: Property 'borderColor' does not exist on type '{ backgroundColor: string; textColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { ...; } | { ...; }'.
+  Property 'borderColor' does not exist on type '{ backgroundColor: string; textColor: string; }'.
+src/components.tsx(102,10): error TS2304: Cannot find name 'ActivityIndicator'.
+src/components.tsx(104,29): error TS2339: Property 'contentRow' does not exist on type '{ backgroundColor: string; textColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { ...; } | { ...; }'.
+  Property 'contentRow' does not exist on type '{ backgroundColor: string; textColor: string; }'.
+src/components.tsx(105,40): error TS2339: Property 'iconMargin' does not exist on type '{ backgroundColor: string; textColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { ...; } | { ...; }'.
+  Property 'iconMargin' does not exist on type '{ backgroundColor: string; textColor: string; }'.
+src/components.tsx(106,32): error TS2339: Property 'text' does not exist on type '{ backgroundColor: string; textColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { backgroundColor: string; textColor: string; borderColor: string; } | { ...; } | { ...; }'.
+  Property 'text' does not exist on type '{ backgroundColor: string; textColor: string; }'.
+src/components.tsx(129,11): error TS2304: Cannot find name 'ViewStyle'.
+src/components.tsx(180,21): error TS2304: Cannot find name 'useRef'.
+src/components.tsx(281,10): error TS2448: Block-scoped variable 'styles' used before its declaration.
+src/components.tsx(281,10): error TS2454: Variable 'styles' is used before being assigned.
+src/components.tsx(282,14): error TS2448: Block-scoped variable 'styles' used before its declaration.
+src/components.tsx(282,14): error TS2454: Variable 'styles' is used before being assigned.
+src/components.tsx(283,12): error TS2448: Block-scoped variable 'styles' used before its declaration.
+src/components.tsx(283,12): error TS2454: Variable 'styles' is used before being assigned.
+src/components.tsx(284,12): error TS2448: Block-scoped variable 'styles' used before its declaration.
+src/components.tsx(284,12): error TS2454: Variable 'styles' is used before being assigned.
+src/components.tsx(285,13): error TS2448: Block-scoped variable 'styles' used before its declaration.
+src/components.tsx(285,13): error TS2454: Variable 'styles' is used before being assigned.
+src/components.tsx(346,73): error TS2339: Property 'secondary' does not exist on type '{ light: { primary: string; secondary: string; card: string; }; dark: { primary: string; secondary: string; card: string; }; }'.
+src/components.tsx(589,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components.tsx(589,12): error TS2786: 'Image' cannot be used as a JSX component.
+  Its type 'new (width?: number | undefined, height?: number | undefined) => HTMLImageElement' is not a valid JSX element type.
+    Type 'new (width?: number | undefined, height?: number | undefined) => HTMLImageElement' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+      Type 'HTMLImageElement' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, render, and 3 more.
+src/components.tsx(669,5): error TS2345: Argument of type '{ button: { borderRadius: number; alignItems: "center"; justifyContent: "center"; flexDirection: "row"; }; contentRow: { flexDirection: "row"; alignItems: "center"; }; iconMargin: { marginRight: number; }; ... 62 more ...; typeIconEmoji: { ...; }; }' is not assignable to parameter of type '{ button: { borderRadius: number; alignItems: "center"; justifyContent: "center"; flexDirection: "row"; }; contentRow: { flexDirection: "row"; alignItems: "center"; }; iconMargin: { marginRight: number; }; ... 62 more ...; typeIconEmoji: { ...; }; } & NamedStyles<...>'.
+  Property 'rexGlow' is incompatible with index signature.
+    Object literal may only specify known properties, and 'blurRadius' does not exist in type 'ViewStyle | TextStyle | ImageStyle'.
+src/components.tsx(848,46): error TS2339: Property 'secondary' does not exist on type '{ light: { primary: string; secondary: string; card: string; }; dark: { primary: string; secondary: string; card: string; }; }'.
+src/themes.ts(2,10): error TS2303: Circular definition of import alias 'Theme'.
+src/themes.ts(146,14): error TS2323: Cannot redeclare exported variable 'LightTheme'.
+src/themes.ts(161,14): error TS2323: Cannot redeclare exported variable 'DarkTheme'.
+src/themes.ts(177,10): error TS2323: Cannot redeclare exported variable 'LightTheme'.
+src/themes.ts(177,10): error TS2484: Export declaration conflicts with exported declaration of 'LightTheme'.
+src/themes.ts(177,22): error TS2323: Cannot redeclare exported variable 'DarkTheme'.
+src/themes.ts(177,22): error TS2484: Export declaration conflicts with exported declaration of 'DarkTheme'.
+src/useTheme.ts(2,10): error TS2305: Module '"react-native"' has no exported member 'ThemeContext'.
+ ELIFECYCLE  Command failed with exit code 2.
