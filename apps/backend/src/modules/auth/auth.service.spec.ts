@@ -4,6 +4,12 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { ConflictException, UnauthorizedException, NotFoundException } from "@nestjs/common";
+import * as bcrypt from "bcrypt";
+
+jest.mock("bcrypt", () => ({
+  hash: jest.fn().mockResolvedValue("hashedpassword"),
+  compare: jest.fn(),
+}));
 
 describe("AuthService", () => {
   let service: AuthService;
@@ -98,6 +104,8 @@ describe("AuthService", () => {
     });
 
     it("should return user and tokens on successful login", async () => {
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
       mockPrisma.user.findUnique.mockResolvedValue({
         id: "user-1",
         email: "test@test.com",

@@ -1,6 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AchievementsService } from "./achievements.service";
 import { PrismaService } from "../../prisma/prisma.service";
+import { GamificationService } from "../gamification/gamification.service";
+import { SocialService } from "../social/social.service";
 
 describe("AchievementsService", () => {
   let service: AchievementsService;
@@ -28,11 +30,21 @@ describe("AchievementsService", () => {
     },
   };
 
+  const mockGamificationService = {
+    onAchievementUnlocked: jest.fn(),
+  };
+
+  const mockSocialService = {
+    postActivity: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AchievementsService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: GamificationService, useValue: mockGamificationService },
+        { provide: SocialService, useValue: mockSocialService },
       ],
     }).compile();
 

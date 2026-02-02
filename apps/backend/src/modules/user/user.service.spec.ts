@@ -97,7 +97,8 @@ describe("UserService", () => {
       expect(result.level).toBe(2);
       expect(result.streak).toBe(5);
       expect(result.xpProgress).toBe(50); // 150 % 100
-      expect(result.xpNeeded).toBe(50); // 200 - 150
+      // xpNeeded = xpForNextLevel - xpProgress = (level * 100) - (xp % 100) = 200 - 50 = 150
+      expect(result.xpNeeded).toBe(150);
     });
   });
 

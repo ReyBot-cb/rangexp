@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { GamificationService } from "./gamification.service";
 import { PrismaService } from "../../prisma/prisma.service";
+import { AchievementsService } from "../achievements/achievements.service";
 
 describe("GamificationService", () => {
   let service: GamificationService;
@@ -13,11 +14,16 @@ describe("GamificationService", () => {
     },
   };
 
+  const mockAchievementsService = {
+    checkAndUnlockAchievement: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GamificationService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: AchievementsService, useValue: mockAchievementsService },
       ],
     }).compile();
 
@@ -33,15 +39,21 @@ describe("GamificationService", () => {
       expect(service.calculateLevel(99)).toBe(1);
     });
 
-    it("should return level 2 for XP >= 100", () => {
+    it("should return level 2 for XP >= 100 and < 150", () => {
       expect(service.calculateLevel(100)).toBe(2);
-      expect(service.calculateLevel(150)).toBe(2);
+      expect(service.calculateLevel(149)).toBe(2);
     });
 
-    it("should calculate correct level for higher XP", () => {
-      // Level 3 starts at 100 + 150 = 250 XP
-      expect(service.calculateLevel(249)).toBe(2);
-      expect(service.calculateLevel(250)).toBe(3);
+    it("should return level 3 for XP >= 150 and < 225", () => {
+      // Algorithm: threshold starts at 100, then 150, then 225...
+      expect(service.calculateLevel(150)).toBe(3);
+      expect(service.calculateLevel(224)).toBe(3);
+    });
+
+    it("should return level 4 for XP >= 225", () => {
+      expect(service.calculateLevel(225)).toBe(4);
+      expect(service.calculateLevel(249)).toBe(4);
+      expect(service.calculateLevel(336)).toBe(4);
     });
   });
 
@@ -57,6 +69,8 @@ describe("GamificationService", () => {
     it("should return cumulative XP for higher levels", () => {
       // Level 3 = 100 + 150 = 250 XP
       expect(service.getXpForLevel(3)).toBe(250);
+      // Level 4 = 100 + 150 + 225 = 475 XP
+      expect(service.getXpForLevel(4)).toBe(475);
     });
   });
 

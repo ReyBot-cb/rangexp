@@ -1,57 +1,86 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ViewStyle, Animated, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, ViewStyle, Animated } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { theme } from '@rangexp/theme';
 
 export type RexMood = 'happy' | 'celebrate' | 'support' | 'neutral' | 'sleeping';
 export type RexSize = 'small' | 'medium' | 'large' | 'xl';
+export type SpeechBubblePosition = 'top' | 'bottom' | 'left';
 
 interface RexProps {
   mood?: RexMood;
   size?: RexSize;
   interactive?: boolean;
   showSpeechBubble?: boolean;
+  speechBubblePosition?: SpeechBubblePosition;
   message?: string;
   onPress?: () => void;
   style?: ViewStyle;
   animationState?: 'idle' | 'greeting' | 'celebrating';
 }
 
-const moodConfig: Record<string, { color: string; glowColor: string; eyeColor: string }> = {
-  happy: { color: theme.colors.rex.body, glowColor: theme.colors.rex.happy, eyeColor: theme.colors.text.primary.light },
-  celebrate: { color: '#F59E0B', glowColor: '#FCD34D', eyeColor: theme.colors.text.primary.light },
-  support: { color: theme.colors.rex.support, glowColor: '#3B82F6', eyeColor: theme.colors.text.primary.light },
-  neutral: { color: theme.colors.rex.neutral, glowColor: theme.colors.rex.body, eyeColor: theme.colors.text.primary.light },
-  sleeping: { color: '#6366F1', glowColor: '#818CF8', eyeColor: theme.colors.text.primary.light },
+const videoSources: Record<RexMood, any> = {
+  happy: require('../../../../assets/happy.mp4'),
+  celebrate: require('../../../../assets/celebration.mp4'),
+  support: require('../../../../assets/supportive.mp4'),
+  neutral: require('../../../../assets/iddle.mp4'),
+  sleeping: require('../../../../assets/sleep.mp4'),
 };
 
-const sizeConfig: Record<string, { width: number; height: number }> = {
+const sizeConfig: Record<RexSize, { width: number; height: number }> = {
   small: { width: 60, height: 80 },
   medium: { width: 80, height: 110 },
   large: { width: 120, height: 160 },
   xl: { width: 160, height: 220 },
 };
 
-export function Rex({ mood = 'happy', size = 'medium', interactive = false, showSpeechBubble = false, message, onPress, style, animationState = 'idle' }: RexProps) {
-  const config = moodConfig[mood] || moodConfig.happy;
+export function Rex({
+  mood = 'happy',
+  size = 'medium',
+  interactive = false,
+  showSpeechBubble = false,
+  speechBubblePosition = 'top',
+  message,
+  onPress,
+  style,
+  animationState = 'idle',
+}: RexProps) {
   const dimensions = sizeConfig[size];
-  
+
+  const [currentMood, setCurrentMood] = useState(mood);
+  const [nextMood, setNextMood] = useState<RexMood | null>(null);
+
+  const currentOpacity = useRef(new Animated.Value(1)).current;
+  const nextOpacity = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
+  // Handle mood transitions with crossfade
   useEffect(() => {
-    if (mood === 'sleeping') return;
-    const float = Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, { toValue: -8, duration: 1500, useNativeDriver: true }),
-        Animated.timing(floatAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
-      ])
-    );
-    float.start();
-    return () => float.stop();
-  }, [floatAnim, mood]);
+    if (mood !== currentMood && !nextMood) {
+      setNextMood(mood);
 
+      Animated.parallel([
+        Animated.timing(currentOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(nextOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setCurrentMood(mood);
+        setNextMood(null);
+        currentOpacity.setValue(1);
+        nextOpacity.setValue(0);
+      });
+    }
+  }, [mood, currentMood, nextMood, currentOpacity, nextOpacity]);
+
+  // Greeting animation (bounce)
   useEffect(() => {
     if (animationState === 'greeting') {
       Animated.sequence([
@@ -63,122 +92,97 @@ export function Rex({ mood = 'happy', size = 'medium', interactive = false, show
     }
   }, [animationState, bounceAnim]);
 
+  // Celebrating animation (pulse)
   useEffect(() => {
     if (animationState === 'celebrating' || mood === 'celebrate') {
-      Animated.loop(
+      const pulse = Animated.loop(
         Animated.sequence([
-          Animated.timing(scaleAnim, { toValue: 1.1, duration: 200, useNativeDriver: true }),
-          Animated.timing(scaleAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+          Animated.timing(scaleAnim, { toValue: 1.05, duration: 400, useNativeDriver: true }),
+          Animated.timing(scaleAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
         ])
-      ).start();
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      scaleAnim.setValue(1);
     }
   }, [animationState, mood, scaleAnim]);
 
   const handlePress = () => {
     if (!interactive || !onPress) return;
     Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 1.15, duration: 100, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.1, duration: 100, useNativeDriver: true }),
       Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
     ]).start();
     onPress();
   };
 
-  const getEyeContent = () => {
-    switch (mood) {
-      case 'happy':
-        return (
-          <View style={styles.eyesRow}>
-            <View style={[styles.eye, styles.eyeHappy, { backgroundColor: config.eyeColor }]} />
-            <View style={[styles.eye, styles.eyeHappy, { backgroundColor: config.eyeColor }]} />
-          </View>
-        );
-      case 'celebrate':
-        return (
-          <View style={styles.eyesRow}>
-            <View style={[styles.eye, styles.eyeCelebrate, { backgroundColor: config.eyeColor }]} />
-            <View style={[styles.eye, styles.eyeCelebrate, { backgroundColor: config.eyeColor }]} />
-          </View>
-        );
-      case 'sleeping':
-        return (
-          <View style={styles.eyesRow}>
-            <View style={[styles.eye, styles.eyeSleeping, { backgroundColor: config.eyeColor }]} />
-            <View style={[styles.eye, styles.eyeSleeping, { backgroundColor: config.eyeColor }]} />
-          </View>
-        );
-      default:
-        return (
-          <View style={styles.eyesRow}>
-            <View style={[styles.eye, { backgroundColor: config.eyeColor }]} />
-            <View style={[styles.eye, { backgroundColor: config.eyeColor }]} />
-          </View>
-        );
-    }
-  };
-
-  const getMouthContent = () => {
-    switch (mood) {
-      case 'happy':
-      case 'celebrate':
-        return <View style={[styles.mouth, styles.mouthHappy, { borderBottomColor: config.eyeColor }]} />;
-      case 'sleeping':
-        return <View style={styles.mouthSleeping} />;
-      case 'support':
-        return <View style={[styles.mouth, styles.mouthSupport, { borderBottomColor: config.eyeColor }]} />;
-      default:
-        return <View style={[styles.mouth, styles.mouthNeutral, { borderBottomColor: config.eyeColor }]} />;
-    }
-  };
-
   const Container = interactive ? TouchableOpacity : View;
-  const containerStyle = interactive ? { cursor: 'pointer' as const } : {};
+  const containerProps = interactive ? { onPress: handlePress, activeOpacity: 0.9 } : {};
 
   return (
-    <Container style={[styles.container, style]} onPress={handlePress} {...containerStyle}>
-      {/* Glow effect */}
-      <View style={[styles.glow, { backgroundColor: config.glowColor + '40', width: dimensions.width * 1.5, height: dimensions.width * 1.5 }]} />
-      
-      {/* Main body */}
-      <Animated.View style={[
-        styles.body,
-        {
-          width: dimensions.width,
-          height: dimensions.height * 0.85,
-          backgroundColor: config.color,
-          borderRadius: dimensions.width * 0.5,
-          transform: [{ scale: scaleAnim }, { translateY: floatAnim }, { translateY: bounceAnim }],
-        }
-      ]}>
-        {/* Eyes */}
-        <View style={styles.eyesContainer}>
-          {getEyeContent()}
-        </View>
+    <Container style={[styles.container, style]} {...containerProps}>
+      {/* Video container with animations */}
+      <Animated.View
+        style={[
+          styles.videoContainer,
+          {
+            width: dimensions.width,
+            height: dimensions.height,
+            transform: [{ scale: scaleAnim }, { translateY: bounceAnim }],
+          },
+        ]}
+      >
+        {/* Current mood video */}
+        <Animated.View style={[styles.videoWrapper, { opacity: currentOpacity }]}>
+          <Video
+            source={videoSources[currentMood]}
+            style={styles.video}
+            resizeMode={ResizeMode.CONTAIN}
+            shouldPlay
+            isLooping
+            isMuted
+          />
+        </Animated.View>
 
-        {/* Cheeks */}
-        <View style={styles.cheeks}>
-          <View style={[styles.cheek, { backgroundColor: 'rgba(236, 72, 153, 0.3)' }]} />
-          <View style={[styles.cheek, { backgroundColor: 'rgba(236, 72, 153, 0.3)' }]} />
-        </View>
-
-        {/* Mouth */}
-        <View style={styles.mouthContainer}>
-          {getMouthContent()}
-        </View>
+        {/* Next mood video (for crossfade) */}
+        {nextMood && (
+          <Animated.View style={[styles.videoWrapper, styles.videoOverlay, { opacity: nextOpacity }]}>
+            <Video
+              source={videoSources[nextMood]}
+              style={styles.video}
+              resizeMode={ResizeMode.CONTAIN}
+              shouldPlay
+              isLooping
+              isMuted
+            />
+          </Animated.View>
+        )}
       </Animated.View>
 
       {/* Speech bubble */}
       {showSpeechBubble && message && (
-        <View style={styles.speechBubble}>
+        <View
+          style={[
+            styles.speechBubble,
+            speechBubblePosition === 'top' && { bottom: dimensions.height + 10 },
+            speechBubblePosition === 'bottom' && { top: dimensions.height + 10 },
+            speechBubblePosition === 'left' && {
+              right: dimensions.width + 10,
+              top: dimensions.height / 2 - 20,
+            },
+          ]}
+        >
           <Text style={styles.speechBubbleText}>{message}</Text>
+          <View
+            style={[
+              styles.speechBubbleArrow,
+              speechBubblePosition === 'top' && styles.speechBubbleArrowBottom,
+              speechBubblePosition === 'bottom' && styles.speechBubbleArrowTop,
+              speechBubblePosition === 'left' && styles.speechBubbleArrowRight,
+            ]}
+          />
         </View>
-      )}
-
-      {/* Z's for sleeping */}
-      {mood === 'sleeping' && (
-        <Animated.View style={[styles.zzz, { transform: [{ translateY: floatAnim }] }]}>
-          <Text style={styles.zzzText}>z</Text>
-          <Text style={[styles.zzzText, { fontSize: 14 }]}>z</Text>
-        </Animated.View>
       )}
     </Container>
   );
@@ -189,102 +193,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  glow: {
-    position: 'absolute',
-    borderRadius: 100,
-    opacity: 0.5,
-  },
-  body: {
+  videoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    ...theme.shadows.rex,
   },
-  eyesContainer: {
+  videoWrapper: {
+    width: '100%',
+    height: '100%',
+  },
+  videoOverlay: {
     position: 'absolute',
-    top: '35%',
-    width: '60%',
-    alignItems: 'center',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  eyesRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  eye: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  eyeHappy: {
-    height: 8,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    transform: [{ rotate: '0deg' }],
-  },
-  eyeCelebrate: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    transform: [{ scaleY: 0.8 }],
-  },
-  eyeSleeping: {
-    width: 16,
-    height: 4,
-    borderRadius: 2,
-    marginHorizontal: 4,
-  },
-  cheeks: {
-    position: 'absolute',
-    bottom: '30%',
-    width: '70%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cheek: {
-    width: 12,
-    height: 6,
-    borderRadius: 3,
-  },
-  mouthContainer: {
-    position: 'absolute',
-    bottom: '20%',
-    width: '40%',
-    alignItems: 'center',
-  },
-  mouth: {
-    width: 28,
-    height: 14,
-    borderBottomWidth: 3,
-    borderRadius: 14,
-  },
-  mouthHappy: {
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
-  },
-  mouthSupport: {
-    width: 24,
-    height: 10,
-  },
-  mouthNeutral: {
-    width: 20,
-    height: 8,
-    borderBottomWidth: 2,
-  },
-  mouthSleeping: {
-    width: 16,
-    height: 6,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderRadius: 3,
+  video: {
+    width: '100%',
+    height: '100%',
   },
   speechBubble: {
     position: 'absolute',
-    top: -50,
     backgroundColor: theme.colors.background.light.card,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: theme.borderRadius.md,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.lg,
     ...theme.shadows.soft,
+    maxWidth: 200,
   },
   speechBubbleText: {
     fontFamily: theme.typography.fontFamily.body,
@@ -292,15 +227,44 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary.light,
     textAlign: 'center',
   },
-  zzz: {
+  speechBubbleArrow: {
     position: 'absolute',
-    top: 0,
-    right: -20,
+    width: 0,
+    height: 0,
   },
-  zzzText: {
-    fontFamily: theme.typography.fontFamily.body,
-    fontSize: 18,
-    color: theme.colors.text.secondary.light,
-    fontWeight: 'bold',
+  speechBubbleArrowBottom: {
+    bottom: -8,
+    alignSelf: 'center',
+    left: '50%',
+    marginLeft: -8,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: theme.colors.background.light.card,
+  },
+  speechBubbleArrowTop: {
+    top: -8,
+    alignSelf: 'center',
+    left: '50%',
+    marginLeft: -8,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: theme.colors.background.light.card,
+  },
+  speechBubbleArrowRight: {
+    right: -8,
+    top: '50%',
+    marginTop: -8,
+    borderTopWidth: 8,
+    borderBottomWidth: 8,
+    borderLeftWidth: 8,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+    borderLeftColor: theme.colors.background.light.card,
   },
 });

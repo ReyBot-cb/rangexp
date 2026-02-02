@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { SocialService } from "./social.service";
 import { PrismaService } from "../../prisma/prisma.service";
+import { AchievementsService } from "../achievements/achievements.service";
 
 describe("SocialService", () => {
   let service: SocialService;
@@ -26,11 +27,16 @@ describe("SocialService", () => {
     },
   };
 
+  const mockAchievementsService = {
+    checkAndUnlockAchievement: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SocialService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: AchievementsService, useValue: mockAchievementsService },
       ],
     }).compile();
 
@@ -66,7 +72,7 @@ describe("SocialService", () => {
 
       await expect(
         service.sendFriendRequest("user-1", { receiverId: "user-2" }),
-      ).rejects.toThrow("Friend request already sent");
+      ).rejects.toThrow("Friend request already sent or users are friends");
     });
 
     it("should create friend request", async () => {

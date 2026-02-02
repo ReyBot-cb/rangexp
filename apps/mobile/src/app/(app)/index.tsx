@@ -13,6 +13,7 @@ import { theme } from '@rangexp/theme';
 import { SafeScreen, useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
 import { Icon } from '../../components/Icon';
+import { AnimatedIcon } from '../../components/AnimatedIcon';
 import { GlucoseCard } from '../../components/GlucoseCard';
 import { XpProgressBar } from '../../components/XpProgressBar';
 import { AchievementBadge } from '../../components/AchievementBadge';
@@ -101,8 +102,9 @@ export default function HomeScreen() {
             </View>
             <Rex
               mood={getRexMood()}
-              size="medium"
+              size="large"
               showSpeechBubble
+              speechBubblePosition="left"
               message={getRexMessage()}
             />
           </View>
@@ -110,7 +112,13 @@ export default function HomeScreen() {
           {/* Streak */}
           <View style={styles.streakRow}>
             <View style={styles.streakIconContainer}>
-              <Icon name="fire" size={24} color={theme.colors.gamification.streak} weight="fill" />
+              <AnimatedIcon
+                name="fire"
+                size={24}
+                color={theme.colors.gamification.streak}
+                weight="fill"
+                animation="flicker"
+              />
             </View>
             <Text style={styles.streakValue}>{user?.streak || 0} días</Text>
             <Text style={styles.streakLabel}>de racha</Text>
@@ -155,7 +163,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Icon
+                <AnimatedIcon
                   name="target"
                   size={20}
                   color={
@@ -164,6 +172,7 @@ export default function HomeScreen() {
                       : theme.colors.primary
                   }
                   weight="duotone"
+                  animation={(stats?.timeInRange || 0) >= 70 ? 'pulse' : 'none'}
                   style={{ marginBottom: 4 }}
                 />
                 <Text
