@@ -26,7 +26,7 @@ export default function Index() {
     ]).start(() => {
       // Navigate based on auth status
       if (isAuthenticated) {
-        router.replace('/(app)/');
+        router.replace('/(app)');
       } else {
         router.replace('/(auth)/login');
       }

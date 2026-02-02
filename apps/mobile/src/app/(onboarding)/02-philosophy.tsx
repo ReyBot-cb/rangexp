@@ -2,85 +2,176 @@ import { useEffect, useRef } from 'react';
 import { View, StyleSheet, Text, Animated, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@rangexp/theme';
+import { useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
+
+// Progress indicator component
+function ProgressDots({ current, total }: { current: number; total: number }) {
+  return (
+    <View style={styles.dotsContainer}>
+      {Array.from({ length: total }).map((_, index) => (
+        <View
+          key={index}
+          style={[
+            styles.dot,
+            index === current && styles.dotActive,
+            index < current && styles.dotCompleted,
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const philosophyItems = [
+  {
+    icon: '✨',
+    title: 'Sin días perfectos',
+    description: 'Solo consistencia. Un registro es siempre una victoria.',
+    color: theme.colors.gamification.xp,
+  },
+  {
+    icon: '🎯',
+    title: 'Sin castigos',
+    description: 'Los números no definen tu valor. Aprendemos de cada dato.',
+    color: theme.colors.primary,
+  },
+  {
+    icon: '💪',
+    title: 'A tu ritmo',
+    description: 'Tú decides qué funciona mejor para ti. Sin presiones.',
+    color: theme.colors.glucose.normal,
+  },
+];
 
 export default function PhilosophyScreen() {
   const router = useRouter();
+  const { insets } = useSafeArea();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(50)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const itemAnims = useRef(philosophyItems.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600,
+        duration: 400,
         useNativeDriver: true,
       }),
-      Animated.timing(translateY, {
+      Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 600,
+        duration: 400,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]).start(() => {
+      // Stagger animation for items
+      Animated.stagger(
+        150,
+        itemAnims.map((anim) =>
+          Animated.spring(anim, {
+            toValue: 1,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+          })
+        )
+      ).start();
+    });
   }, []);
 
   const handleContinue = () => {
     router.replace('/(onboarding)/03-rex-intro');
   };
 
+  const handlePressIn = () => {
+    Animated.spring(buttonScale, { toValue: 0.95, useNativeDriver: true }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(buttonScale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
+  };
+
   return (
     <View style={styles.container}>
+      {/* Progress */}
+      <View style={[styles.header, { paddingTop: insets.top + theme.spacing.md }]}>
+        <ProgressDots current={1} total={4} />
+      </View>
+
       {/* Rex */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.rexContainer,
-          { opacity: fadeAnim, transform: [{ translateY }] }
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
         ]}
       >
-        <Rex 
-          mood="support" 
-          size="large"
-        />
+        <Rex mood="support" size="large" />
       </Animated.View>
 
-      {/* Content */}
-      <Animated.View 
+      {/* Title */}
+      <Animated.View
         style={[
-          styles.content,
-          { opacity: fadeAnim, transform: [{ translateY }] }
+          styles.titleContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
         ]}
       >
         <Text style={styles.title}>Nuestra Filosofía</Text>
-        
-        <View style={styles.philosophyItem}>
-          <Text style={styles.icon}>✨</Text>
-          <View style={styles.textContainer}>
-            <Text style={styles.itemTitle}>Sin días perfectos</Text>
-            <Text style={styles.itemText}>Solo consistencia. Un registro es siempre una victoria.</Text>
-          </View>
-        </View>
-
-        <View style={styles.philosophyItem}>
-          <Text style={styles.icon}>🎯</Text>
-          <View style={styles.textContainer}>
-            <Text style={styles.itemTitle}>Sin castigos</Text>
-            <Text style={styles.itemText}>Los números no definen tu valor. Aprendemos de cada dato.</Text>
-          </View>
-        </View>
-
-        <View style={styles.philosophyItem}>
-          <Text style={styles.icon}>💪</Text>
-          <View style={styles.textContainer}>
-            <Text style={styles.itemTitle}>A tu ritmo</Text>
-            <Text style={styles.itemText}>Tú decides qué funciona mejor para ti.</Text>
-          </View>
-        </View>
+        <Text style={styles.subtitle}>Creemos en un enfoque diferente</Text>
       </Animated.View>
 
+      {/* Philosophy Items */}
+      <View style={styles.itemsContainer}>
+        {philosophyItems.map((item, index) => (
+          <Animated.View
+            key={index}
+            style={[
+              styles.itemCard,
+              {
+                opacity: itemAnims[index],
+                transform: [
+                  {
+                    translateX: itemAnims[index].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-30, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View style={[styles.iconContainer, { backgroundColor: item.color + '20' }]}>
+              <Text style={styles.icon}>{item.icon}</Text>
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={styles.itemTitle}>{item.title}</Text>
+              <Text style={styles.itemText}>{item.description}</Text>
+            </View>
+          </Animated.View>
+        ))}
+      </View>
+
       {/* Continue Button */}
-      <TouchableOpacity style={styles.button} onPress={handleContinue}>
-        <Text style={styles.buttonText}>Continuar →</Text>
-      </TouchableOpacity>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.spacing['2xl']) }]}>
+        <Animated.View style={{ transform: [{ scale: buttonScale }], width: '100%' }}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleContinue}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.buttonText}>Continuar</Text>
+            <Text style={styles.buttonArrow}>→</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
     </View>
   );
 }
@@ -89,44 +180,79 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background.light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: theme.spacing.lg,
   },
-  rexContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
     alignItems: 'center',
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.background.light.secondary,
+  },
+  dotActive: {
+    width: 24,
+    backgroundColor: theme.colors.primary,
+  },
+  dotCompleted: {
+    backgroundColor: theme.colors.primaryLight,
+  },
+  rexContainer: {
+    alignItems: 'center',
+    marginTop: theme.spacing.lg,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
   },
   title: {
     fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.fontSize["2xl"],
+    fontSize: theme.typography.fontSize['2xl'],
     color: theme.colors.text.primary.light,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.xs,
   },
-  philosophyItem: {
+  subtitle: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.text.secondary.light,
+  },
+  itemsContainer: {
+    gap: theme.spacing.md,
+  },
+  itemCard: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.sm,
+    alignItems: 'center',
+    backgroundColor: theme.colors.background.light.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    ...theme.shadows.soft,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
   },
   icon: {
-    fontSize: 28,
-    marginRight: theme.spacing.md,
+    fontSize: 24,
   },
   textContainer: {
     flex: 1,
   },
   itemTitle: {
     fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.lg,
+    fontSize: theme.typography.fontSize.base,
     fontWeight: '600',
     color: theme.colors.text.primary.light,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   itemText: {
     fontFamily: theme.typography.fontFamily.body,
@@ -134,18 +260,33 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary.light,
     lineHeight: 20,
   },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: theme.spacing.lg,
+  },
   button: {
     backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.md,
-    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: 18,
     paddingHorizontal: theme.spacing.xl,
-    position: 'absolute',
-    bottom: theme.spacing["2xl"],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...theme.shadows.medium,
   },
   buttonText: {
     fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.base,
+    fontSize: theme.typography.fontSize.lg,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  buttonArrow: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.lg,
+    color: '#FFFFFF',
+    marginLeft: theme.spacing.sm,
   },
 });

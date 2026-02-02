@@ -12,11 +12,14 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@rangexp/theme';
+import { useSafeArea } from '../../components/SafeScreen';
 import { useRegister } from '../../hooks/useUser';
 import { Rex } from '../../components/Rex';
+import { Icon } from '../../components/Icon';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { insets } = useSafeArea();
   const registerMutation = useRegister();
 
   const [name, setName] = useState('');
@@ -25,6 +28,8 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Focus states
   const [nameFocused, setNameFocused] = useState(false);
@@ -100,9 +105,12 @@ export default function RegisterScreen() {
 
   // Password strength indicator
   const getPasswordStrength = () => {
-    if (!password) return { level: 0, label: '', color: theme.colors.text.disabled.light };
-    if (password.length < 8) return { level: 1, label: 'Débil', color: theme.colors.glucose.high };
-    if (password.length < 12) return { level: 2, label: 'Media', color: theme.colors.glucose.low };
+    if (!password)
+      return { level: 0, label: '', color: theme.colors.text.disabled.light };
+    if (password.length < 8)
+      return { level: 1, label: 'Débil', color: theme.colors.glucose.high };
+    if (password.length < 12)
+      return { level: 2, label: 'Media', color: theme.colors.glucose.low };
     return { level: 3, label: 'Fuerte', color: theme.colors.glucose.normal };
   };
 
@@ -114,7 +122,7 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -129,12 +137,7 @@ export default function RegisterScreen() {
         >
           {/* Rex Header */}
           <View style={styles.rexContainer}>
-            <Rex
-              mood="celebrate"
-              size="medium"
-              showSpeechBubble
-              message="¡Vamos a empezar!"
-            />
+            <Rex mood="celebrate" size="medium" showSpeechBubble message="¡Vamos a empezar!" />
           </View>
 
           {/* Header */}
@@ -146,58 +149,98 @@ export default function RegisterScreen() {
 
           {/* Form Card */}
           <View style={styles.formCard}>
+            {/* Name Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Nombre</Text>
-              <TextInput
-                style={[styles.input, nameFocused && styles.inputFocused]}
-                value={name}
-                onChangeText={(text) => {
-                  setName(text);
-                  clearError();
-                }}
-                placeholder="¿Cómo te llamas?"
-                placeholderTextColor={theme.colors.text.disabled.light}
-                autoComplete="name"
-                onFocus={() => setNameFocused(true)}
-                onBlur={() => setNameFocused(false)}
-              />
+              <View
+                style={[styles.inputWrapper, nameFocused && styles.inputWrapperFocused]}
+              >
+                <Icon
+                  name="user"
+                  size={20}
+                  color={nameFocused ? theme.colors.primary : theme.colors.text.disabled.light}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={(text) => {
+                    setName(text);
+                    clearError();
+                  }}
+                  placeholder="¿Cómo te llamas?"
+                  placeholderTextColor={theme.colors.text.disabled.light}
+                  autoComplete="name"
+                  onFocus={() => setNameFocused(true)}
+                  onBlur={() => setNameFocused(false)}
+                />
+              </View>
             </View>
 
+            {/* Email Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={[styles.input, emailFocused && styles.inputFocused]}
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  clearError();
-                }}
-                placeholder="tu@email.com"
-                placeholderTextColor={theme.colors.text.disabled.light}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-              />
+              <View
+                style={[styles.inputWrapper, emailFocused && styles.inputWrapperFocused]}
+              >
+                <Icon
+                  name="envelope"
+                  size={20}
+                  color={emailFocused ? theme.colors.primary : theme.colors.text.disabled.light}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    clearError();
+                  }}
+                  placeholder="tu@email.com"
+                  placeholderTextColor={theme.colors.text.disabled.light}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                />
+              </View>
             </View>
 
+            {/* Password Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Contraseña</Text>
-              <TextInput
-                style={[styles.input, passwordFocused && styles.inputFocused]}
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  clearError();
-                }}
-                placeholder="Mínimo 8 caracteres"
-                placeholderTextColor={theme.colors.text.disabled.light}
-                secureTextEntry
-                autoComplete="new-password"
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
+              <View
+                style={[styles.inputWrapper, passwordFocused && styles.inputWrapperFocused]}
+              >
+                <Icon
+                  name="lock"
+                  size={20}
+                  color={passwordFocused ? theme.colors.primary : theme.colors.text.disabled.light}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    clearError();
+                  }}
+                  placeholder="Mínimo 8 caracteres"
+                  placeholderTextColor={theme.colors.text.disabled.light}
+                  secureTextEntry={!showPassword}
+                  autoComplete="new-password"
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon
+                    name={showPassword ? 'eye-slash' : 'eye'}
+                    size={20}
+                    color={theme.colors.text.disabled.light}
+                  />
+                </TouchableOpacity>
+              </View>
               {password.length > 0 && (
                 <View style={styles.strengthContainer}>
                   <View style={styles.strengthBar}>
@@ -216,6 +259,12 @@ export default function RegisterScreen() {
                       />
                     ))}
                   </View>
+                  <Icon
+                    name={passwordStrength.level >= 3 ? 'shield-check' : 'shield'}
+                    size={14}
+                    color={passwordStrength.color}
+                    weight={passwordStrength.level >= 2 ? 'fill' : 'regular'}
+                  />
                   <Text style={[styles.strengthLabel, { color: passwordStrength.color }]}>
                     {passwordStrength.label}
                   </Text>
@@ -223,34 +272,74 @@ export default function RegisterScreen() {
               )}
             </View>
 
+            {/* Confirm Password Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Confirmar contraseña</Text>
-              <TextInput
+              <View
                 style={[
-                  styles.input,
-                  confirmFocused && styles.inputFocused,
-                  confirmPassword && password !== confirmPassword && styles.inputError,
+                  styles.inputWrapper,
+                  confirmFocused && styles.inputWrapperFocused,
+                  confirmPassword && password !== confirmPassword && styles.inputWrapperError,
                 ]}
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  clearError();
-                }}
-                placeholder="Repite la contraseña"
-                placeholderTextColor={theme.colors.text.disabled.light}
-                secureTextEntry
-                autoComplete="new-password"
-                onFocus={() => setConfirmFocused(true)}
-                onBlur={() => setConfirmFocused(false)}
-              />
+              >
+                <Icon
+                  name="lock-key"
+                  size={20}
+                  color={
+                    confirmPassword && password !== confirmPassword
+                      ? theme.colors.states.error
+                      : confirmFocused
+                        ? theme.colors.primary
+                        : theme.colors.text.disabled.light
+                  }
+                />
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    clearError();
+                  }}
+                  placeholder="Repite la contraseña"
+                  placeholderTextColor={theme.colors.text.disabled.light}
+                  secureTextEntry={!showConfirmPassword}
+                  autoComplete="new-password"
+                  onFocus={() => setConfirmFocused(true)}
+                  onBlur={() => setConfirmFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon
+                    name={showConfirmPassword ? 'eye-slash' : 'eye'}
+                    size={20}
+                    color={theme.colors.text.disabled.light}
+                  />
+                </TouchableOpacity>
+              </View>
+              {confirmPassword && password === confirmPassword && (
+                <View style={styles.matchIndicator}>
+                  <Icon name="check-circle" size={14} color={theme.colors.glucose.normal} weight="fill" />
+                  <Text style={styles.matchText}>Las contraseñas coinciden</Text>
+                </View>
+              )}
               {confirmPassword && password !== confirmPassword && (
-                <Text style={styles.fieldError}>Las contraseñas no coinciden</Text>
+                <View style={styles.matchIndicator}>
+                  <Icon name="x-circle" size={14} color={theme.colors.states.error} weight="fill" />
+                  <Text style={styles.noMatchText}>Las contraseñas no coinciden</Text>
+                </View>
               )}
             </View>
 
             {error ? (
               <View style={styles.errorContainer}>
-                <Text style={styles.errorIcon}>⚠️</Text>
+                <Icon
+                  name="warning-circle"
+                  size={18}
+                  color={theme.colors.states.error}
+                  weight="fill"
+                />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             ) : null}
@@ -264,9 +353,14 @@ export default function RegisterScreen() {
                 disabled={isLoading}
                 activeOpacity={0.9}
               >
-                <Text style={styles.buttonText}>
-                  {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
-                </Text>
+                {isLoading ? (
+                  <Text style={styles.buttonText}>Creando cuenta...</Text>
+                ) : (
+                  <>
+                    <Icon name="sparkle" size={20} color="#FFFFFF" weight="fill" />
+                    <Text style={styles.buttonText}>Crear Cuenta</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </Animated.View>
           </View>
@@ -280,9 +374,13 @@ export default function RegisterScreen() {
           </View>
 
           {/* Disclaimer */}
-          <Text style={styles.disclaimer}>
-            Al crear tu cuenta, aceptas nuestros Términos de Servicio y Política de Privacidad
-          </Text>
+          <View style={styles.disclaimerContainer}>
+            <Icon name="shield" size={14} color={theme.colors.text.disabled.light} />
+            <Text style={styles.disclaimer}>
+              Al crear tu cuenta, aceptas nuestros Términos de Servicio y Política de
+              Privacidad
+            </Text>
+          </View>
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -347,29 +445,36 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary.light,
     marginBottom: theme.spacing.xs,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.background.light.secondary,
     borderRadius: theme.borderRadius.md,
-    paddingVertical: 14,
     paddingHorizontal: theme.spacing.md,
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.primary.light,
     borderWidth: 2,
     borderColor: 'transparent',
+    gap: theme.spacing.sm,
   },
-  inputFocused: {
+  inputWrapperFocused: {
     borderColor: theme.colors.primary,
     backgroundColor: theme.colors.background.light.card,
   },
-  inputError: {
+  inputWrapperError: {
     borderColor: theme.colors.states.error,
     backgroundColor: '#FEF2F2',
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: theme.typography.fontSize.base,
+    fontFamily: theme.typography.fontFamily.body,
+    color: theme.colors.text.primary.light,
   },
   strengthContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.spacing.xs,
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   strengthBar: {
     flexDirection: 'row',
@@ -386,23 +491,30 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.xs,
     fontWeight: '600',
   },
-  fieldError: {
+  matchIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
+    gap: theme.spacing.xs,
+  },
+  matchText: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.glucose.normal,
+  },
+  noMatchText: {
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.xs,
     color: theme.colors.states.error,
-    marginTop: theme.spacing.xs,
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.states.error + '10',
+    borderRadius: theme.borderRadius.md,
     padding: theme.spacing.sm,
     marginBottom: theme.spacing.md,
-  },
-  errorIcon: {
-    fontSize: 16,
-    marginRight: theme.spacing.xs,
+    gap: theme.spacing.sm,
   },
   errorText: {
     fontFamily: theme.typography.fontFamily.body,
@@ -411,12 +523,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   button: {
+    flexDirection: 'row',
     backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.md,
     paddingVertical: 16,
     paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
     ...theme.shadows.medium,
   },
   buttonDisabled: {
@@ -445,11 +560,17 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: '600',
   },
+  disclaimerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.xs,
+  },
   disclaimer: {
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.xs,
     color: theme.colors.text.disabled.light,
     textAlign: 'center',
-    paddingHorizontal: theme.spacing.lg,
+    flex: 1,
   },
 });

@@ -1,38 +1,109 @@
-import { useState } from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Alert,
+  Animated,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@rangexp/theme';
+import { useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
+import { Icon, IconName } from '../../components/Icon';
+import { XpProgressBar } from '../../components/XpProgressBar';
 import { useUserStore } from '../../store';
 import { useLogout } from '../../hooks/useUser';
 
+type SettingItemProps = {
+  icon: IconName;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  rightElement?: React.ReactNode;
+};
+
+function SettingItem({ icon, label, value, onPress, rightElement }: SettingItemProps) {
+  const content = (
+    <View style={styles.settingItem}>
+      <View style={styles.settingIcon}>
+        <Icon name={icon} size={20} color={theme.colors.primary} weight="duotone" />
+      </View>
+      <View style={styles.settingInfo}>
+        <Text style={styles.settingLabel}>{label}</Text>
+        {value && <Text style={styles.settingValue}>{value}</Text>}
+      </View>
+      {rightElement || (
+        <Icon name="caret-right" size={20} color={theme.colors.text.disabled.light} />
+      )}
+    </View>
+  );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return content;
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
+  const { insets } = useSafeArea();
   const { user, updateUser } = useUserStore();
   const logoutMutation = useLogout();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(user?.notificationsEnabled ?? true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    user?.notificationsEnabled ?? true
+  );
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Cerrar sesión',
-      '¿Estás seguro de que quieres salir?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Cerrar sesión',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logoutMutation.mutateAsync();
-            } catch (error) {
-              // Si el API falla, igualmente hacemos logout local
-              console.log('API logout failed, proceeding with local logout');
-            }
-            router.replace('/(auth)/login');
+    Alert.alert('Cerrar sesión', '¿Estás seguro de que quieres salir?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Cerrar sesión',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await logoutMutation.mutateAsync();
+          } catch (error) {
+            console.log('API logout failed, proceeding with local logout');
           }
+          router.replace('/(auth)/login');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleUpdateNotifications = (enabled: boolean) => {
@@ -43,127 +114,196 @@ export default function ProfileScreen() {
   const handleUpdateUnit = () => {
     const newUnit = user?.glucoseUnit === 'MG_DL' ? 'MMOL_L' : 'MG_DL';
     updateUser({ glucoseUnit: newUnit });
-    Alert.alert('Unidad actualizada', `Ahora usas ${newUnit === 'MG_DL' ? 'mg/dL' : 'mmol/L'}`);
+    Alert.alert(
+      'Unidad actualizada',
+      `Ahora usas ${newUnit === 'MG_DL' ? 'mg/dL' : 'mmol/L'}`
+    );
   };
 
+  const xpProgress = (user?.xp || 0) % 100;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header with Rex */}
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Rex mood="happy" size="large" />
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + theme.spacing.md }]}
+      showsVerticalScrollIndicator={false}
+    >
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-left" size={20} color={theme.colors.text.primary.light} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Perfil</Text>
+          <View style={styles.headerSpacer} />
         </View>
-        <Text style={styles.name}>{user?.name || 'Usuario'}</Text>
-        <Text style={styles.email}>{user?.email || 'email@ejemplo.com'}</Text>
-        <View style={styles.levelBadge}>
-          <Text style={styles.levelText}>Nivel {user?.level || 1}</Text>
-        </View>
-      </View>
 
-      {/* Stats */}
-      <View style={styles.statsSection}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{user?.xp || 0}</Text>
-          <Text style={styles.statLabel}>XP Total</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{user?.streak || 0}</Text>
-          <Text style={styles.statLabel}>Días seguidos</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{user?.isPremium ? '✨' : 'Free'}</Text>
-          <Text style={styles.statLabel}>Plan</Text>
-        </View>
-      </View>
-
-      {/* Settings */}
-      <View style={styles.settingsSection}>
-        <Text style={styles.sectionTitle}>Ajustes</Text>
-
-        {/* Unit Toggle */}
-        <TouchableOpacity style={styles.settingItem} onPress={handleUpdateUnit}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Unidad de glucosa</Text>
-            <Text style={styles.settingValue}>
-              {user?.glucoseUnit === 'MG_DL' ? 'mg/dL' : 'mmol/L'}
-            </Text>
+        {/* Profile Card */}
+        <Animated.View
+          style={[
+            styles.profileCard,
+            {
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          <View style={styles.avatarContainer}>
+            <Rex mood="happy" size="large" />
           </View>
-          <Text style={styles.settingArrow}>→</Text>
-        </TouchableOpacity>
+          <Text style={styles.name}>{user?.name || 'Usuario'}</Text>
+          <Text style={styles.email}>{user?.email || 'email@ejemplo.com'}</Text>
 
-        {/* Notifications Toggle */}
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Notificaciones</Text>
-            <Text style={styles.settingValue}>
-              Recordatorios suaves
-            </Text>
+          {/* Level Badge & XP */}
+          <View style={styles.levelContainer}>
+            <View style={styles.levelBadge}>
+              <Icon name="star" size={16} color={theme.colors.gamification.xp} weight="fill" />
+              <Text style={styles.levelText}>Nivel {user?.level || 1}</Text>
+            </View>
           </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={handleUpdateNotifications}
-            trackColor={{ false: theme.colors.background.light.secondary, true: theme.colors.primary }}
-            thumbColor="#FFFFFF"
+
+          <View style={styles.xpContainer}>
+            <XpProgressBar
+              currentXp={xpProgress}
+              nextLevelXp={100}
+              level={user?.level || 1}
+              showDetails
+            />
+          </View>
+        </Animated.View>
+
+        {/* Quick Stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Icon name="lightning" size={24} color={theme.colors.gamification.xp} weight="fill" />
+            <Text style={styles.statValue}>{user?.xp || 0}</Text>
+            <Text style={styles.statLabel}>XP Total</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Icon name="fire" size={24} color={theme.colors.gamification.streak} weight="fill" />
+            <Text style={styles.statValue}>{user?.streak || 0}</Text>
+            <Text style={styles.statLabel}>Racha</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Icon
+              name={user?.isPremium ? 'crown' : 'star'}
+              size={24}
+              color={user?.isPremium ? theme.colors.gamification.xp : theme.colors.text.secondary.light}
+              weight="fill"
+            />
+            <Text style={styles.statValue}>{user?.isPremium ? 'Pro' : 'Free'}</Text>
+            <Text style={styles.statLabel}>Plan</Text>
+          </View>
+        </View>
+
+        {/* Settings Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ajustes</Text>
+
+          <SettingItem
+            icon="syringe"
+            label="Unidad de glucosa"
+            value={user?.glucoseUnit === 'MG_DL' ? 'mg/dL' : 'mmol/L'}
+            onPress={handleUpdateUnit}
+          />
+
+          <SettingItem
+            icon="bell"
+            label="Notificaciones"
+            value="Recordatorios suaves"
+            rightElement={
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleUpdateNotifications}
+                trackColor={{
+                  false: theme.colors.background.light.secondary,
+                  true: theme.colors.primary,
+                }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={theme.colors.background.light.secondary}
+              />
+            }
           />
         </View>
-      </View>
 
-      {/* Premium */}
-      {!user?.isPremium && (
-        <TouchableOpacity style={styles.premiumCard} onPress={() => Alert.alert('Premium', 'Próximamente')}>
-          <Text style={styles.premiumEmoji}>⭐</Text>
-          <View style={styles.premiumInfo}>
-            <Text style={styles.premiumTitle}>Upgrade a Premium</Text>
-            <Text style={styles.premiumSubtitle}>Más funciones, más logros</Text>
-          </View>
-          <Text style={styles.premiumArrow}>→</Text>
+        {/* Premium Card */}
+        {!user?.isPremium && (
+          <TouchableOpacity
+            style={styles.premiumCard}
+            onPress={() => Alert.alert('Premium', 'Próximamente')}
+            activeOpacity={0.9}
+          >
+            <View style={styles.premiumGlow} />
+            <Icon name="sparkle" size={32} color="#FFFFFF" weight="fill" />
+            <View style={styles.premiumInfo}>
+              <Text style={styles.premiumTitle}>Upgrade a Premium</Text>
+              <Text style={styles.premiumSubtitle}>
+                Más funciones, más logros, sin anuncios
+              </Text>
+            </View>
+            <Icon name="caret-right" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
+
+        {/* About Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acerca de</Text>
+
+          <SettingItem
+            icon="heart"
+            label="Conoce a Rex"
+            onPress={() =>
+              Alert.alert('Rex', 'Tu compañero en el manejo de la diabetes')
+            }
+          />
+
+          <SettingItem
+            icon="shield"
+            label="Privacidad"
+            onPress={() => Alert.alert('Política de privacidad', 'Próximamente')}
+          />
+
+          <SettingItem
+            icon="scroll"
+            label="Términos de servicio"
+            onPress={() => Alert.alert('Términos', 'Próximamente')}
+          />
+
+          <SettingItem
+            icon="info"
+            label="Versión"
+            rightElement={
+              <Text style={styles.versionText}>0.0.1</Text>
+            }
+          />
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Icon name="sign-out" size={20} color={theme.colors.states.error} />
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
-      )}
 
-      {/* About */}
-      <View style={styles.settingsSection}>
-        <Text style={styles.sectionTitle}>Acerca de</Text>
-        
-        <TouchableOpacity style={styles.settingItem} onPress={() => Alert.alert('Rex', 'Tu compañero en el manejo de la diabetes')}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>🐾 Conoce a Rex</Text>
-          </View>
-          <Text style={styles.settingArrow}>→</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem} onPress={() => Alert.alert('Política de privacidad', 'Próximamente')}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Privacidad</Text>
-          </View>
-          <Text style={styles.settingArrow}>→</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem} onPress={() => Alert.alert('Términos', 'Próximamente')}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Términos de servicio</Text>
-          </View>
-          <Text style={styles.settingArrow}>→</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem} onPress={() => Alert.alert('Versión', '0.0.1')}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Versión</Text>
-          </View>
-          <Text style={styles.settingValue}>0.0.1</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Cerrar sesión</Text>
-      </TouchableOpacity>
-
-      {/* Made with love */}
-      <Text style={styles.footer}>
-        Hecho con ❤️ para ti
-      </Text>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Hecho con</Text>
+          <Icon name="heart" size={14} color={theme.colors.states.error} weight="fill" />
+          <Text style={styles.footerText}>para ti</Text>
+        </View>
+        <Text style={styles.footerSubtext}>RangeXp 2024</Text>
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -174,19 +314,45 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.light.primary,
   },
   content: {
-    padding: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     paddingBottom: 100,
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: theme.spacing.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.background.light.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: theme.typography.fontFamily.heading,
+    fontSize: theme.typography.fontSize.xl,
+    color: theme.colors.text.primary.light,
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  profileCard: {
+    alignItems: 'center',
+    backgroundColor: theme.colors.background.light.card,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    ...theme.shadows.card,
   },
   avatarContainer: {
     marginBottom: theme.spacing.md,
   },
   name: {
     fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.fontSize["2xl"],
+    fontSize: theme.typography.fontSize['2xl'],
     color: theme.colors.text.primary.light,
     marginBottom: 4,
   },
@@ -194,49 +360,55 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.text.secondary.light,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  levelContainer: {
+    marginBottom: theme.spacing.md,
   },
   levelBadge: {
-    backgroundColor: theme.colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.gamification.xp + '20',
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: 4,
+    paddingVertical: theme.spacing.xs,
+    gap: theme.spacing.xs,
   },
   levelText: {
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.sm,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: theme.colors.gamification.xp,
   },
-  statsSection: {
+  xpContainer: {
+    width: '100%',
+  },
+  statsRow: {
     flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.xl,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
     backgroundColor: theme.colors.background.light.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
     ...theme.shadows.soft,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: theme.colors.background.light.secondary,
-    marginHorizontal: theme.spacing.sm,
   },
   statValue: {
     fontFamily: theme.typography.fontFamily.heading,
     fontSize: theme.typography.fontSize.xl,
     color: theme.colors.text.primary.light,
-    marginBottom: 4,
+    marginTop: theme.spacing.xs,
   },
   statLabel: {
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.xs,
     color: theme.colors.text.secondary.light,
+    marginTop: 2,
   },
-  settingsSection: {
+  section: {
     marginBottom: theme.spacing.lg,
   },
   sectionTitle: {
@@ -251,12 +423,20 @@ const styles = StyleSheet.create({
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: theme.colors.background.light.card,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
     ...theme.shadows.soft,
+  },
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
   },
   settingInfo: {
     flex: 1,
@@ -272,48 +452,55 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary.light,
     marginTop: 2,
   },
-  settingArrow: {
-    fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.text.disabled.light,
+  versionText: {
+    fontFamily: theme.typography.fontFamily.mono,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary.light,
   },
   premiumCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F59E0B',
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.gamification.xp,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+    overflow: 'hidden',
+    gap: theme.spacing.md,
+    ...theme.shadows.medium,
   },
-  premiumEmoji: {
-    fontSize: 32,
-    marginRight: theme.spacing.md,
+  premiumGlow: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   premiumInfo: {
     flex: 1,
   },
   premiumTitle: {
-    fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.base,
+    fontFamily: theme.typography.fontFamily.heading,
+    fontSize: theme.typography.fontSize.lg,
     fontWeight: '600',
     color: '#FFFFFF',
+    marginBottom: 2,
   },
   premiumSubtitle: {
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.sm,
     color: 'rgba(255, 255, 255, 0.8)',
   },
-  premiumArrow: {
-    fontFamily: theme.typography.fontFamily.body,
-    fontSize: theme.typography.fontSize.lg,
-    color: '#FFFFFF',
-  },
   logoutButton: {
-    backgroundColor: theme.colors.background.light.secondary,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.background.light.secondary,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
     marginTop: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   logoutText: {
     fontFamily: theme.typography.fontFamily.body,
@@ -322,10 +509,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.xl,
+    gap: theme.spacing.xs,
+  },
+  footerText: {
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary.light,
+  },
+  footerSubtext: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.xs,
     color: theme.colors.text.disabled.light,
     textAlign: 'center',
-    marginTop: theme.spacing.xl,
+    marginTop: 4,
   },
 });

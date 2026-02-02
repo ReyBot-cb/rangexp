@@ -1,6 +1,18 @@
 // RangeXp API Client - uses native fetch for React Native compatibility
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000/v1";
+// En desarrollo, usa la IP de la máquina local
+// En producción, usar variable de entorno o URL de producción
+const getApiBaseUrl = () => {
+  // @ts-ignore - Expo environment variable
+  if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_BASE_URL) {
+    // @ts-ignore
+    return process.env.EXPO_PUBLIC_API_BASE_URL;
+  }
+  // Fallback para desarrollo - cambiar IP según tu red local
+  return "http://192.168.1.37:3000/v1";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Helper to set auth token
 let authToken: string | null = null;
@@ -37,6 +49,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
+
+  console.log(`[API] ${method} ${url}`);
 
   const response = await fetch(url, config);
 

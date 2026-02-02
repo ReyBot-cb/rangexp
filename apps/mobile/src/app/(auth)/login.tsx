@@ -12,12 +12,15 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@rangexp/theme';
+import { useSafeArea } from '../../components/SafeScreen';
 import { useLogin } from '../../hooks/useUser';
 import { useUserStore } from '../../store';
 import { Rex } from '../../components/Rex';
+import { Icon } from '../../components/Icon';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { insets } = useSafeArea();
   const loginMutation = useLogin();
   const { setUser } = useUserStore();
 
@@ -27,6 +30,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -57,11 +61,28 @@ export default function LoginScreen() {
     setIsLoading(true);
     setError('');
 
+    // Timeout de 10 segundos
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+      setError('Tiempo de espera agotado. Verifica tu conexión.');
+    }, 10000);
+
     try {
+      console.log('Intentando login con:', email);
+      console.log('API URL:', process.env.EXPO_PUBLIC_API_BASE_URL);
       await loginMutation.mutateAsync({ email, password });
-      router.replace('/(app)/');
-    } catch (err) {
-      setError('Credenciales incorrectas. Inténtalo de nuevo.');
+      clearTimeout(timeoutId);
+      router.replace('/(app)');
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      console.log('Error de login:', err?.message || err);
+      if (err?.message?.includes('Network') || err?.message?.includes('fetch')) {
+        setError('Error de conexión. Verifica que el servidor esté activo.');
+      } else {
+        setError(
+          err?.response?.data?.message || 'Credenciales incorrectas. Inténtalo de nuevo.'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +109,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -123,52 +144,93 @@ export default function LoginScreen() {
           <View style={styles.formCard}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
-              <TextInput
+              <View
                 style={[
-                  styles.input,
-                  emailFocused && styles.inputFocused,
-                  error && !password && styles.inputError,
+                  styles.inputWrapper,
+                  emailFocused && styles.inputWrapperFocused,
+                  error && !email && styles.inputWrapperError,
                 ]}
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setError('');
-                }}
-                placeholder="tu@email.com"
-                placeholderTextColor={theme.colors.text.disabled.light}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-              />
+              >
+                <Icon
+                  name="envelope"
+                  size={20}
+                  color={
+                    emailFocused
+                      ? theme.colors.primary
+                      : theme.colors.text.disabled.light
+                  }
+                />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setError('');
+                  }}
+                  placeholder="tu@email.com"
+                  placeholderTextColor={theme.colors.text.disabled.light}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                />
+              </View>
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Contraseña</Text>
-              <TextInput
+              <View
                 style={[
-                  styles.input,
-                  passwordFocused && styles.inputFocused,
-                  error && !password && styles.inputError,
+                  styles.inputWrapper,
+                  passwordFocused && styles.inputWrapperFocused,
+                  error && !password && styles.inputWrapperError,
                 ]}
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setError('');
-                }}
-                placeholder="••••••••"
-                placeholderTextColor={theme.colors.text.disabled.light}
-                secureTextEntry
-                autoComplete="password"
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
+              >
+                <Icon
+                  name="lock"
+                  size={20}
+                  color={
+                    passwordFocused
+                      ? theme.colors.primary
+                      : theme.colors.text.disabled.light
+                  }
+                />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setError('');
+                  }}
+                  placeholder="••••••••"
+                  placeholderTextColor={theme.colors.text.disabled.light}
+                  secureTextEntry={!showPassword}
+                  autoComplete="password"
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon
+                    name={showPassword ? 'eye-slash' : 'eye'}
+                    size={20}
+                    color={theme.colors.text.disabled.light}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {error ? (
               <View style={styles.errorContainer}>
-                <Text style={styles.errorIcon}>⚠️</Text>
+                <Icon
+                  name="warning-circle"
+                  size={18}
+                  color={theme.colors.states.error}
+                  weight="fill"
+                />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             ) : null}
@@ -182,27 +244,33 @@ export default function LoginScreen() {
                 disabled={isLoading}
                 activeOpacity={0.9}
               >
-                <Text style={styles.buttonText}>
-                  {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-                </Text>
+                {isLoading ? (
+                  <Text style={styles.buttonText}>Iniciando sesión...</Text>
+                ) : (
+                  <>
+                    <Icon name="sign-out" size={20} color="#FFFFFF" />
+                    <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </Animated.View>
           </View>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              ¿No tienes cuenta?{' '}
-            </Text>
+            <Text style={styles.footerText}>¿No tienes cuenta? </Text>
             <TouchableOpacity onPress={() => router.replace('/(auth)/register')}>
               <Text style={styles.linkText}>Regístrate</Text>
             </TouchableOpacity>
           </View>
 
           {/* Disclaimer */}
-          <Text style={styles.disclaimer}>
-            Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad
-          </Text>
+          <View style={styles.disclaimerContainer}>
+            <Icon name="shield" size={14} color={theme.colors.text.disabled.light} />
+            <Text style={styles.disclaimer}>
+              Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad
+            </Text>
+          </View>
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -267,35 +335,39 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary.light,
     marginBottom: theme.spacing.xs,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.background.light.secondary,
     borderRadius: theme.borderRadius.md,
-    paddingVertical: 14,
     paddingHorizontal: theme.spacing.md,
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.primary.light,
     borderWidth: 2,
     borderColor: 'transparent',
+    gap: theme.spacing.sm,
   },
-  inputFocused: {
+  inputWrapperFocused: {
     borderColor: theme.colors.primary,
     backgroundColor: theme.colors.background.light.card,
   },
-  inputError: {
+  inputWrapperError: {
     borderColor: theme.colors.states.error,
     backgroundColor: '#FEF2F2',
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: theme.typography.fontSize.base,
+    fontFamily: theme.typography.fontFamily.body,
+    color: theme.colors.text.primary.light,
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.states.error + '10',
+    borderRadius: theme.borderRadius.md,
     padding: theme.spacing.sm,
     marginBottom: theme.spacing.md,
-  },
-  errorIcon: {
-    fontSize: 16,
-    marginRight: theme.spacing.xs,
+    gap: theme.spacing.sm,
   },
   errorText: {
     fontFamily: theme.typography.fontFamily.body,
@@ -304,12 +376,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   button: {
+    flexDirection: 'row',
     backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.md,
     paddingVertical: 16,
     paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
     ...theme.shadows.medium,
   },
   buttonDisabled: {
@@ -338,11 +413,16 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: '600',
   },
+  disclaimerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.xs,
+  },
   disclaimer: {
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.xs,
     color: theme.colors.text.disabled.light,
     textAlign: 'center',
-    paddingHorizontal: theme.spacing.lg,
   },
 });
