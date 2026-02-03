@@ -29,23 +29,31 @@ export function useGlucoseReadings(options?: { startDate?: string; endDate?: str
 
 export function useAddGlucose() {
   const queryClient = useQueryClient();
-  const { addReading, pendingSync, syncPendingReadings } = useGlucoseStore();
+  const { addReading, syncPendingReadings } = useGlucoseStore();
 
   return useMutation({
     mutationFn: async (reading: { value: number; context: GlucoseContext; notes?: string; timestamp?: string }) => {
+      const recordedAt = reading.timestamp || new Date().toISOString();
+
       addReading({
         value: reading.value,
         context: reading.context,
         notes: reading.notes,
-        timestamp: reading.timestamp || new Date().toISOString(),
+        timestamp: recordedAt,
         unit: 'MG_DL',
       });
 
-      const pending = pendingSync[pendingSync.length - 1];
-      if (pending) {
-        await apiClient.post('/glucose', pending);
-        syncPendingReadings();
-      }
+      // Build the payload with only the fields the backend expects
+      const payload = {
+        value: reading.value,
+        unit: 'MG_DL',
+        context: reading.context.toUpperCase(), // Backend expects UPPERCASE
+        recordedAt,
+        ...(reading.notes && { note: reading.notes }), // Backend uses 'note', not 'notes'
+      };
+
+      const response = await apiClient.post('/glucose', payload);
+      syncPendingReadings();
 
       return reading;
     },

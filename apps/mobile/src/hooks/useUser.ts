@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUserStore, User as StoreUser } from '../store';
-import { apiClient } from '@rangexp/api-client';
+import { apiClient, setAuthToken } from '@rangexp/api-client';
 import { User as ApiUser } from '@rangexp/types';
 
 interface AuthResponse {
   user: ApiUser;
-  token?: string;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 // Map API User to Store User
@@ -43,11 +44,15 @@ export function useUser() {
 
 export function useLogin() {
   const queryClient = useQueryClient();
-  const { setUser } = useUserStore();
+  const { setUser, setAuthToken: setStoreToken } = useUserStore();
 
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       const { data } = await apiClient.post<AuthResponse>('/auth/login', credentials);
+      if (data.accessToken) {
+        setAuthToken(data.accessToken); // Set in apiClient for immediate use
+        setStoreToken(data.accessToken); // Persist in store
+      }
       return mapApiUserToStoreUser(data.user);
     },
     onSuccess: (storeUser) => {
@@ -59,7 +64,7 @@ export function useLogin() {
 
 export function useRegister() {
   const queryClient = useQueryClient();
-  const { setUser } = useUserStore();
+  const { setUser, setAuthToken: setStoreToken } = useUserStore();
 
   return useMutation({
     mutationFn: async (userData: { email: string; password: string; name: string }) => {
@@ -69,6 +74,10 @@ export function useRegister() {
         password: userData.password,
         firstName: userData.name,
       });
+      if (data.accessToken) {
+        setAuthToken(data.accessToken); // Set in apiClient for immediate use
+        setStoreToken(data.accessToken); // Persist in store
+      }
       return mapApiUserToStoreUser(data.user);
     },
     onSuccess: (storeUser) => {
@@ -80,7 +89,7 @@ export function useRegister() {
 
 export function useLogout() {
   const queryClient = useQueryClient();
-  const { logout } = useUserStore();
+  const { logout, setAuthToken: setStoreToken } = useUserStore();
 
   return useMutation({
     mutationFn: async () => {
@@ -93,6 +102,8 @@ export function useLogout() {
     },
     onSettled: () => {
       // Always perform local logout, regardless of API success/failure
+      setAuthToken(null); // Clear from apiClient
+      setStoreToken(null); // Clear from store
       logout();
       queryClient.clear();
     },

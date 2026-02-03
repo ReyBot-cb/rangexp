@@ -23,12 +23,14 @@ export interface User {
 interface UserState {
   user: User | null;
   isAuthenticated: boolean;
+  authToken: string | null;
   notificationsCount: number;
   recentAchievements: number;
   friendCount: number;
-  
+
   // Actions
   setUser: (user: User | null) => void;
+  setAuthToken: (token: string | null) => void;
   updateUser: (updates: Partial<User>) => void;
   addXp: (amount: number) => void;
   updateStreak: (days: number) => void;
@@ -44,15 +46,18 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
+      authToken: null,
       notificationsCount: 0,
       recentAchievements: 0,
       friendCount: 0,
 
-      setUser: (user) => set({ 
-        user, 
+      setUser: (user) => set({
+        user,
         isAuthenticated: !!user,
         friendCount: user?.friendsCount || 0,
       }),
+
+      setAuthToken: (token) => set({ authToken: token }),
       
       updateUser: (updates) => set((state) => ({
         user: state.user ? { ...state.user, ...updates } : null,
@@ -90,6 +95,7 @@ export const useUserStore = create<UserState>()(
       logout: () => set({
         user: null,
         isAuthenticated: false,
+        authToken: null,
         notificationsCount: 0,
         recentAchievements: 0,
         friendCount: 0,
@@ -101,6 +107,7 @@ export const useUserStore = create<UserState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        authToken: state.authToken,
       }),
     }
   )

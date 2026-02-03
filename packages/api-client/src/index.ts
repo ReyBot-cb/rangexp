@@ -50,8 +50,6 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   const url = `${API_BASE_URL}${endpoint}`;
 
-  console.log(`[API] ${method} ${url}`);
-
   const response = await fetch(url, config);
 
   const data = await response.json();

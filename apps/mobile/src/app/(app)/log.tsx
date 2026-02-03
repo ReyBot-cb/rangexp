@@ -107,13 +107,14 @@ export default function LogScreen() {
 
       addXp(10);
 
-      Alert.alert(
-        '¡Registrado!',
-        `+10 XP ganados\n\n${getStatusInfo(getStatus(numericValue)).text}`,
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo guardar el registro. Inténtalo de nuevo.');
+      // Clear form state and navigate back
+      setValue('');
+      setNotes('');
+      setSelectedContext('fasting');
+      router.back();
+    } catch (error: any) {
+      console.error('[LogScreen] Error:', error?.message);
+      Alert.alert('Error', `No se pudo guardar el registro: ${error?.message || 'Error desconocido'}`);
     } finally {
       setIsSubmitting(false);
     }
