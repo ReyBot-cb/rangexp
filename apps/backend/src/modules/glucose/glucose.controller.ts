@@ -9,7 +9,6 @@ import {
   Query,
   UseGuards,
   Request,
-  ParseUUIDPipe,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 import { GlucoseService } from "./glucose.service";
@@ -57,7 +56,7 @@ export class GlucoseController {
   @ApiOperation({ summary: "Get a specific glucose reading" })
   @ApiResponse({ status: 200, description: "Reading details" })
   @ApiResponse({ status: 404, description: "Reading not found" })
-  async findById(@Request() req, @Param("id", ParseUUIDPipe) id: string) {
+  async findById(@Request() req, @Param("id") id: string) {
     return this.glucoseService.findById(req.user.id, id);
   }
 
@@ -66,7 +65,7 @@ export class GlucoseController {
   @ApiResponse({ status: 200, description: "Reading updated" })
   async update(
     @Request() req,
-    @Param("id", ParseUUIDPipe) id: string,
+    @Param("id") id: string,
     @Body() dto: UpdateGlucoseDto,
   ) {
     return this.glucoseService.update(req.user.id, id, dto);
@@ -75,7 +74,7 @@ export class GlucoseController {
   @Delete(":id")
   @ApiOperation({ summary: "Delete a glucose reading" })
   @ApiResponse({ status: 200, description: "Reading deleted" })
-  async delete(@Request() req, @Param("id", ParseUUIDPipe) id: string) {
+  async delete(@Request() req, @Param("id") id: string) {
     return this.glucoseService.delete(req.user.id, id);
   }
 }
