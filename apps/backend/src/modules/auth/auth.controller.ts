@@ -72,4 +72,13 @@ export class AuthController {
   async updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
     return this.authService.updateProfile(req.user.id, dto);
   }
+
+  @Post("refresh")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Refresh access token using refresh token" })
+  @ApiResponse({ status: 200, description: "New access token generated" })
+  @ApiResponse({ status: 401, description: "Invalid or expired refresh token" })
+  async refresh(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshTokenFromBody(body.refreshToken);
+  }
 }

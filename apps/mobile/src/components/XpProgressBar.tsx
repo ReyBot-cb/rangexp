@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Text, Animated, ViewStyle } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { theme } from '@rangexp/theme';
 
 interface XpProgressBarProps {
@@ -8,6 +9,7 @@ interface XpProgressBarProps {
   level: number;
   showDetails?: boolean;
   animated?: boolean;
+  hapticFeedback?: boolean;
   style?: ViewStyle;
 }
 
@@ -17,24 +19,56 @@ export function XpProgressBar({
   level,
   showDetails = true,
   animated = true,
+  hapticFeedback = true,
   style,
 }: XpProgressBarProps) {
   const progress = Math.min(currentXp / nextLevelXp, 1);
   const xpToNext = nextLevelXp - currentXp;
-  
+
   const animatedProgress = useRef(new Animated.Value(animated ? 0 : progress)).current;
+  const lastHapticThreshold = useRef(0);
+
+  const triggerProgressHaptic = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+  const triggerCompletionHaptic = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, []);
 
   useEffect(() => {
     if (animated) {
+      lastHapticThreshold.current = 0;
+
+      const listenerId = hapticFeedback
+        ? animatedProgress.addListener(({ value }) => {
+            const currentThreshold = Math.floor(value * 10);
+            if (currentThreshold > lastHapticThreshold.current) {
+              lastHapticThreshold.current = currentThreshold;
+              triggerProgressHaptic();
+            }
+          })
+        : null;
+
       Animated.timing(animatedProgress, {
         toValue: progress,
         duration: 800,
         useNativeDriver: false,
-      }).start();
+      }).start(({ finished }) => {
+        if (finished && hapticFeedback && progress > 0) {
+          triggerCompletionHaptic();
+        }
+      });
+
+      return () => {
+        if (listenerId !== null) {
+          animatedProgress.removeListener(listenerId);
+        }
+      };
     } else {
       animatedProgress.setValue(progress);
     }
-  }, [progress, animated]);
+  }, [progress, animated, hapticFeedback, triggerProgressHaptic, triggerCompletionHaptic]);
 
   const width = animatedProgress.interpolate({
     inputRange: [0, 1],

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ViewStyle, Animated } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { theme } from '@rangexp/theme';
 
 export type RexMood = 'happy' | 'celebrate' | 'support' | 'neutral' | 'sleeping';
@@ -54,6 +54,19 @@ export function Rex({
   const nextOpacity = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
+
+  // Video players for current and next mood
+  const currentPlayer = useVideoPlayer(videoSources[currentMood], (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
+
+  const nextPlayer = useVideoPlayer(nextMood ? videoSources[nextMood] : null, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
 
   // Handle mood transitions with crossfade
   useEffect(() => {
@@ -135,26 +148,22 @@ export function Rex({
       >
         {/* Current mood video */}
         <Animated.View style={[styles.videoWrapper, { opacity: currentOpacity }]}>
-          <Video
-            source={videoSources[currentMood]}
+          <VideoView
+            player={currentPlayer}
             style={styles.video}
-            resizeMode={ResizeMode.CONTAIN}
-            shouldPlay
-            isLooping
-            isMuted
+            contentFit="contain"
+            nativeControls={false}
           />
         </Animated.View>
 
         {/* Next mood video (for crossfade) */}
-        {nextMood && (
+        {nextMood && nextPlayer && (
           <Animated.View style={[styles.videoWrapper, styles.videoOverlay, { opacity: nextOpacity }]}>
-            <Video
-              source={videoSources[nextMood]}
+            <VideoView
+              player={nextPlayer}
               style={styles.video}
-              resizeMode={ResizeMode.CONTAIN}
-              shouldPlay
-              isLooping
-              isMuted
+              contentFit="contain"
+              nativeControls={false}
             />
           </Animated.View>
         )}

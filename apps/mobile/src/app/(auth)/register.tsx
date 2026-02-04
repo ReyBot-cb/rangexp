@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { theme } from '@rangexp/theme';
 import { useSafeArea } from '../../components/SafeScreen';
 import { useRegister } from '../../hooks/useUser';
+import { useAppStore } from '../../store';
 import { Rex } from '../../components/Rex';
 import { Icon } from '../../components/Icon';
 
@@ -21,6 +22,10 @@ export default function RegisterScreen() {
   const router = useRouter();
   const { insets } = useSafeArea();
   const registerMutation = useRegister();
+  const { hasCompletedOnboarding } = useAppStore();
+
+  // If onboarding is completed, user came from the app (as anonymous) and can go back
+  const canGoBack = hasCompletedOnboarding;
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -80,7 +85,7 @@ export default function RegisterScreen() {
 
     try {
       await registerMutation.mutateAsync({ email, password, name });
-      router.replace('/(onboarding)/01-welcome');
+      router.replace('/(app)');
     } catch (err) {
       setError('Error al crear la cuenta. Inténtalo de nuevo.');
     } finally {
@@ -135,6 +140,18 @@ export default function RegisterScreen() {
             },
           ]}
         >
+          {/* Back Button (only show if user can go back to app) */}
+          {canGoBack && (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Icon name="arrow-left" size={20} color={theme.colors.text.primary.light} />
+              <Text style={styles.backButtonText}>Volver</Text>
+            </TouchableOpacity>
+          )}
+
           {/* Rex Header */}
           <View style={styles.rexContainer}>
             <Rex mood="celebrate" size="medium" showSpeechBubble message="¡Vamos a empezar!" />
@@ -399,6 +416,20 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.xl,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: theme.spacing.md,
+    padding: theme.spacing.sm,
+    marginLeft: -theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
+  backButtonText: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.text.primary.light,
   },
   rexContainer: {
     alignItems: 'center',

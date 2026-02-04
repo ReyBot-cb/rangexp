@@ -171,5 +171,67 @@ describe("GamificationService", () => {
 
       expect(result.streak).toBe(1);
     });
+
+    it("should not change streak for same day activity", async () => {
+      const today = new Date();
+      today.setHours(today.getHours() - 2); // 2 hours ago, same day
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 5,
+        lastActiveAt: today,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        id: "user-1",
+        streak: 5,
+        lastActiveAt: new Date(),
+      });
+
+      const result = await service.updateStreak("user-1");
+
+      expect(result.streak).toBe(5);
+      expect(result.streakChanged).toBe(false);
+    });
+
+    it("should reset streak after 3 days gap", async () => {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 10,
+        lastActiveAt: threeDaysAgo,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        lastActiveAt: new Date(),
+      });
+
+      const result = await service.updateStreak("user-1");
+
+      expect(result.streak).toBe(1);
+      expect(result.streakChanged).toBe(true);
+    });
+
+    it("should handle long streaks correctly", async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 100,
+        lastActiveAt: yesterday,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        id: "user-1",
+        streak: 101,
+        lastActiveAt: new Date(),
+      });
+
+      const result = await service.updateStreak("user-1");
+
+      expect(result.streak).toBe(101);
+    });
   });
 });

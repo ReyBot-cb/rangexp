@@ -1,9 +1,7 @@
 import { View, StyleSheet } from 'react-native';
-import { Tabs, useRouter, usePathname } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@rangexp/theme';
-import { useUserStore } from '../../store';
-import { useEffect } from 'react';
 import { Icon, IconPresets } from '../../components/Icon';
 
 type TabIconProps = {
@@ -25,20 +23,11 @@ function TabIcon({ focused, iconPreset }: TabIconProps) {
 }
 
 export default function AppLayout() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { isAuthenticated } = useUserStore();
   const insets = useSafeAreaInsets();
 
   // Tab bar height calculation: base height + safe area bottom
   const TAB_BAR_BASE_HEIGHT = 60;
   const tabBarHeight = TAB_BAR_BASE_HEIGHT + insets.bottom;
-
-  useEffect(() => {
-    if (!isAuthenticated && !pathname.includes('(auth)')) {
-      router.replace('/(auth)/login');
-    }
-  }, [isAuthenticated, pathname]);
 
   return (
     <Tabs

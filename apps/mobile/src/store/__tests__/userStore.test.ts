@@ -23,6 +23,7 @@ describe('userStore', () => {
     notificationsEnabled: true,
     createdAt: '2024-01-01T00:00:00Z',
     friendsCount: 3,
+    accountType: 'registered' as const,
   };
 
   describe('initial state', () => {
@@ -202,6 +203,18 @@ describe('userStore', () => {
       expect(state.user?.streak).toBe(10);
     });
 
+    it('should set lastStreakDate when updating streak', () => {
+      const today = new Date().toISOString().split('T')[0];
+
+      act(() => {
+        useUserStore.getState().setUser(mockUser);
+        useUserStore.getState().updateStreak(10);
+      });
+
+      const state = useUserStore.getState();
+      expect(state.user?.lastStreakDate).toBe(today);
+    });
+
     it('should not modify state if user is null', () => {
       act(() => {
         useUserStore.getState().updateStreak(10);
@@ -292,6 +305,226 @@ describe('userStore', () => {
       expect(state.notificationsCount).toBe(0);
       expect(state.recentAchievements).toBe(0);
       expect(state.friendCount).toBe(0);
+    });
+  });
+
+  describe('initializeAnonymousUser', () => {
+    it('should create anonymous user when no user exists', () => {
+      act(() => {
+        useUserStore.getState().initializeAnonymousUser();
+      });
+
+      const state = useUserStore.getState();
+      expect(state.user).not.toBeNull();
+      expect(state.user?.accountType).toBe('anonymous');
+      expect(state.user?.name).toBe('Invitado');
+      expect(state.user?.xp).toBe(0);
+      expect(state.user?.streak).toBe(0);
+      expect(state.isAuthenticated).toBe(false);
+    });
+
+    it('should generate anonymousId', () => {
+      act(() => {
+        useUserStore.getState().initializeAnonymousUser();
+      });
+
+      const state = useUserStore.getState();
+      expect(state.anonymousId).not.toBeNull();
+      expect(state.user?.id).toBe(state.anonymousId);
+    });
+
+    it('should not override existing user', () => {
+      act(() => {
+        useUserStore.getState().setUser(mockUser);
+        useUserStore.getState().initializeAnonymousUser();
+      });
+
+      const state = useUserStore.getState();
+      expect(state.user?.email).toBe(mockUser.email);
+      expect(state.user?.accountType).toBe('registered');
+    });
+  });
+
+  describe('linkAccount', () => {
+    const mockRegisteredUser = {
+      ...mockUser,
+      xp: 500,
+      level: 5,
+      streak: 10,
+      lastStreakDate: new Date().toISOString().split('T')[0], // Today
+      accountType: 'registered' as const,
+    };
+
+    describe('XP merging', () => {
+      it('should sum XP when linking anonymous user to registered account', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          useUserStore.getState().addXp(50); // Anonymous has 50 XP
+        });
+
+        let result: any;
+        act(() => {
+          result = useUserStore.getState().linkAccount(mockRegisteredUser, 'token');
+        });
+
+        // XP should be summed: 500 (server) + 50 (anonymous) = 550
+        expect(result.xp).toBe(550);
+      });
+
+      it('should recalculate level based on total XP', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          useUserStore.getState().addXp(100);
+        });
+
+        let result: any;
+        act(() => {
+          result = useUserStore.getState().linkAccount(
+            { ...mockRegisteredUser, xp: 90, level: 1 },
+            'token'
+          );
+        });
+
+        // Total XP = 90 + 100 = 190, Level = floor(190/100) + 1 = 2
+        expect(result.xp).toBe(190);
+        expect(result.level).toBe(2);
+      });
+    });
+
+    describe('streak merging', () => {
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      it('should use server streak when anonymous has no recent activity', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          // Anonymous has no activity (streak 0, no lastStreakDate)
+        });
+
+        let result: any;
+        act(() => {
+          result = useUserStore.getState().linkAccount(mockRegisteredUser, 'token');
+        });
+
+        expect(result.streak).toBe(10); // Server streak
+      });
+
+      it('should use anonymous streak when server streak is broken (old date)', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          useUserStore.getState().updateStreak(2); // Anonymous has streak 2 with today's date
+        });
+
+        let result: any;
+        act(() => {
+          result = useUserStore.getState().linkAccount(
+            { ...mockRegisteredUser, streak: 10, lastStreakDate: threeDaysAgo },
+            'token'
+          );
+        });
+
+        // Server streak is broken (3 days ago), use anonymous streak (2)
+        expect(result.streak).toBe(2);
+      });
+
+      it('should combine streaks when both are consecutive', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          useUserStore.getState().updateStreak(2); // Anonymous has streak 2 with today's date
+        });
+
+        let result: any;
+        act(() => {
+          result = useUserStore.getState().linkAccount(
+            { ...mockRegisteredUser, streak: 10, lastStreakDate: yesterday },
+            'token'
+          );
+        });
+
+        // Server streak (10) was active yesterday, anonymous continued today (2)
+        // They should be combined: 10 + 2 = 12
+        expect(result.streak).toBe(12);
+      });
+
+      it('should use anonymous streak when server has no lastStreakDate', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          useUserStore.getState().updateStreak(3);
+        });
+
+        let result: any;
+        act(() => {
+          result = useUserStore.getState().linkAccount(
+            { ...mockRegisteredUser, streak: 10, lastStreakDate: undefined },
+            'token'
+          );
+        });
+
+        // No server lastStreakDate means we can't verify continuity, use anonymous
+        expect(result.streak).toBe(3);
+      });
+    });
+
+    describe('authentication state', () => {
+      it('should set isAuthenticated to true', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          useUserStore.getState().linkAccount(mockRegisteredUser, 'token');
+        });
+
+        const state = useUserStore.getState();
+        expect(state.isAuthenticated).toBe(true);
+      });
+
+      it('should set authToken', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          useUserStore.getState().linkAccount(mockRegisteredUser, 'my-auth-token');
+        });
+
+        const state = useUserStore.getState();
+        expect(state.authToken).toBe('my-auth-token');
+      });
+
+      it('should set accountType to registered', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+          useUserStore.getState().linkAccount(mockRegisteredUser, 'token');
+        });
+
+        const state = useUserStore.getState();
+        expect(state.user?.accountType).toBe('registered');
+      });
+
+      it('should preserve anonymousId for reference', () => {
+        act(() => {
+          useUserStore.getState().initializeAnonymousUser();
+        });
+
+        const anonymousId = useUserStore.getState().anonymousId;
+
+        act(() => {
+          useUserStore.getState().linkAccount(mockRegisteredUser, 'token');
+        });
+
+        const state = useUserStore.getState();
+        expect(state.anonymousId).toBe(anonymousId);
+      });
+    });
+
+    describe('no anonymous user', () => {
+      it('should use server data directly when no anonymous user exists', () => {
+        // Don't initialize anonymous user, link directly
+        let result: any;
+        act(() => {
+          result = useUserStore.getState().linkAccount(mockRegisteredUser, 'token');
+        });
+
+        expect(result.xp).toBe(mockRegisteredUser.xp);
+        expect(result.streak).toBe(mockRegisteredUser.streak);
+        expect(result.level).toBe(mockRegisteredUser.level);
+      });
     });
   });
 });

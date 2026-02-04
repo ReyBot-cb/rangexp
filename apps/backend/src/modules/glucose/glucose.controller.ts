@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
+  Logger,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 import { GlucoseService } from "./glucose.service";
@@ -20,12 +21,16 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class GlucoseController {
+  private readonly logger = new Logger(GlucoseController.name);
+
   constructor(private glucoseService: GlucoseService) {}
 
   @Post()
   @ApiOperation({ summary: "Create a new glucose reading" })
   @ApiResponse({ status: 201, description: "Reading created successfully" })
   async create(@Request() req, @Body() dto: CreateGlucoseDto) {
+    this.logger.debug(`[GlucoseController] POST /glucose - user: ${JSON.stringify(req.user)}`);
+    this.logger.debug(`[GlucoseController] POST /glucose - dto: ${JSON.stringify(dto)}`);
     return this.glucoseService.create(req.user.id, dto);
   }
 

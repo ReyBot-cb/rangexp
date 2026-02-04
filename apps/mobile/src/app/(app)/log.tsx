@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@rangexp/theme';
+import { GAMIFICATION } from '@rangexp/types';
 import { useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
 import { Icon, IconName } from '../../components/Icon';
@@ -105,7 +106,7 @@ export default function LogScreen() {
         notes: notes || undefined,
       });
 
-      addXp(10);
+      addXp(GAMIFICATION.XP.GLUCOSE_LOG);
 
       // Clear form state and navigate back
       setValue('');
@@ -283,7 +284,7 @@ export default function LogScreen() {
           {/* XP Preview */}
           <View style={styles.xpPreview}>
             <Icon name="lightning" size={18} color={theme.colors.gamification.xp} weight="fill" />
-            <Text style={styles.xpText}>+10 XP al guardar</Text>
+            <Text style={styles.xpText}>+{GAMIFICATION.XP.GLUCOSE_LOG} XP al guardar</Text>
           </View>
 
           {/* Spacer for button */}

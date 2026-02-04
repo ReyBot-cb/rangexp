@@ -74,6 +74,7 @@ export const useGlucoseStore = create<{
   updateReading: (id: string, updates: Partial<GlucoseReading>) => void;
   deleteReading: (id: string) => void;
   setReadings: (readings: GlucoseReading[]) => void;
+  clearReadings: () => void;
   syncPendingReadings: () => void;
   calculateStats: () => void;
   getTodayReadings: () => GlucoseReading[];
@@ -120,6 +121,10 @@ export const useGlucoseStore = create<{
       setReadings: (readings) => {
         set({ readings });
         get().calculateStats();
+      },
+
+      clearReadings: () => {
+        set({ readings: [], pendingSync: [], stats: null });
       },
 
       syncPendingReadings: () => {

@@ -9,6 +9,7 @@ import {
   UsersFour,
   User,
   UserCircle,
+  UserPlus,
   ArrowLeft,
   Gear,
   GearSix,
@@ -58,6 +59,7 @@ import {
   PaperPlaneTilt,
   Share,
   SignOut,
+  SignIn,
   CaretRight,
   CaretDown,
   ArrowRight,
@@ -79,6 +81,7 @@ import {
   SealCheck,
   Scroll,
   Lightbulb,
+  Cloud,
   type IconProps as PhosphorIconProps,
 } from 'phosphor-react-native';
 
@@ -92,6 +95,7 @@ export type IconName =
   | 'users-four'
   | 'user'
   | 'user-circle'
+  | 'user-plus'
   | 'arrow-left'
   | 'arrow-right'
   | 'caret-right'
@@ -162,6 +166,7 @@ export type IconName =
   | 'share'
   // Auth
   | 'sign-out'
+  | 'sign-in'
   | 'eye'
   | 'eye-slash'
   | 'envelope'
@@ -173,7 +178,8 @@ export type IconName =
   | 'scroll'
   | 'lightbulb'
   | 'arrow-up'
-  | 'arrow-down';
+  | 'arrow-down'
+  | 'cloud';
 
 export type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
 
@@ -195,6 +201,7 @@ const iconMap: Record<IconName, React.ComponentType<PhosphorIconProps>> = {
   'users-four': UsersFour,
   'user': User,
   'user-circle': UserCircle,
+  'user-plus': UserPlus,
   'arrow-left': ArrowLeft,
   'arrow-right': ArrowRight,
   'caret-right': CaretRight,
@@ -265,6 +272,7 @@ const iconMap: Record<IconName, React.ComponentType<PhosphorIconProps>> = {
   'share': Share,
   // Auth
   'sign-out': SignOut,
+  'sign-in': SignIn,
   'eye': Eye,
   'eye-slash': EyeSlash,
   'envelope': Envelope,
@@ -277,6 +285,7 @@ const iconMap: Record<IconName, React.ComponentType<PhosphorIconProps>> = {
   'lightbulb': Lightbulb,
   'arrow-up': ArrowUp,
   'arrow-down': ArrowDown,
+  'cloud': Cloud,
 };
 
 export function Icon({

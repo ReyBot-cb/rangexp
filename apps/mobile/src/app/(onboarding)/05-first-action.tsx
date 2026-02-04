@@ -5,24 +5,7 @@ import { theme } from '@rangexp/theme';
 import { useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
 import { useUserStore } from '../../store';
-
-// Progress indicator component
-function ProgressDots({ current, total }: { current: number; total: number }) {
-  return (
-    <View style={styles.dotsContainer}>
-      {Array.from({ length: total }).map((_, index) => (
-        <View
-          key={index}
-          style={[
-            styles.dot,
-            index === current && styles.dotActive,
-            index < current && styles.dotCompleted,
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
+import { ProgressDots } from '../../components/onboarding';
 
 export default function FirstActionScreen() {
   const router = useRouter();
@@ -63,12 +46,12 @@ export default function FirstActionScreen() {
     });
   }, []);
 
-  const handleStart = () => {
+  const handleContinue = () => {
     updateUser({
       glucoseUnit: selectedUnit,
       notificationsEnabled,
     });
-    router.replace('/(app)');
+    router.replace('/(onboarding)/06-auth-prompt');
   };
 
   const handlePressIn = () => {
@@ -87,7 +70,7 @@ export default function FirstActionScreen() {
     >
       {/* Progress */}
       <View style={[styles.header, { paddingTop: insets.top + theme.spacing.md }]}>
-        <ProgressDots current={3} total={4} />
+        <ProgressDots current={4} total={6} />
       </View>
 
       {/* Rex */}
@@ -223,17 +206,16 @@ export default function FirstActionScreen() {
         </Text>
       </View>
 
-      {/* Start Button */}
+      {/* Continue Button */}
       <Animated.View style={[styles.buttonContainer, { transform: [{ scale: buttonScale }] }]}>
         <TouchableOpacity
           style={styles.button}
-          onPress={handleStart}
+          onPress={handleContinue}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           activeOpacity={0.9}
         >
-          <Text style={styles.buttonText}>¡Empezar!</Text>
-          <Text style={styles.buttonEmoji}>🎉</Text>
+          <Text style={styles.buttonText}>Continuar</Text>
         </TouchableOpacity>
       </Animated.View>
     </ScrollView>
@@ -250,23 +232,6 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.colors.background.light.secondary,
-  },
-  dotActive: {
-    width: 24,
-    backgroundColor: theme.colors.primary,
-  },
-  dotCompleted: {
-    backgroundColor: theme.colors.primaryLight,
   },
   rexContainer: {
     alignItems: 'center',
@@ -421,9 +386,5 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.lg,
     fontWeight: '600',
     color: '#FFFFFF',
-  },
-  buttonEmoji: {
-    fontSize: 20,
-    marginLeft: theme.spacing.sm,
   },
 });

@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, Animated, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useUserStore } from '../store';
+import { useUserStore, useAppStore } from '../store';
+import { setAuthToken } from '@rangexp/api-client';
 import { theme } from '@rangexp/theme';
 
 export default function Index() {
   const router = useRouter();
-  const { isAuthenticated } = useUserStore();
+  const { isAuthenticated, user, authToken, initializeAnonymousUser } = useUserStore();
+  const { hasCompletedOnboarding } = useAppStore();
   const [splashAnim] = useState(new Animated.Value(0));
+
+  // Sync persisted auth token with apiClient on app start
+  useEffect(() => {
+    if (authToken) {
+      setAuthToken(authToken);
+    }
+  }, [authToken]);
 
   useEffect(() => {
     // Splash animation
@@ -24,11 +33,20 @@ export default function Index() {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // Navigate based on auth status
-      if (isAuthenticated) {
+      // Navigation flow:
+      // 1. If onboarding not completed → onboarding
+      // 2. If onboarding completed + authenticated → app
+      // 3. If onboarding completed + not authenticated → initialize anonymous → app
+      if (!hasCompletedOnboarding) {
+        router.replace('/(onboarding)/01-welcome');
+      } else if (isAuthenticated) {
         router.replace('/(app)');
       } else {
-        router.replace('/(auth)/login');
+        // Initialize anonymous user if needed
+        if (!user) {
+          initializeAnonymousUser();
+        }
+        router.replace('/(app)');
       }
     });
   }, []);

@@ -18,6 +18,9 @@ import { XpProgressBar } from '../../components/XpProgressBar';
 import { useUserStore } from '../../store';
 import { useLogout } from '../../hooks/useUser';
 
+const isAnonymous = (user: { accountType?: string } | null) =>
+  !user || user.accountType === 'anonymous';
+
 type SettingItemProps = {
   icon: IconName;
   label: string;
@@ -159,8 +162,12 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <Rex mood="happy" size="large" />
           </View>
-          <Text style={styles.name}>{user?.name || 'Usuario'}</Text>
-          <Text style={styles.email}>{user?.email || 'email@ejemplo.com'}</Text>
+          <Text style={styles.name}>
+            {isAnonymous(user) ? 'Invitado' : user?.name || 'Usuario'}
+          </Text>
+          <Text style={styles.email}>
+            {isAnonymous(user) ? 'Usando la app sin cuenta' : user?.email || ''}
+          </Text>
 
           {/* Level Badge & XP */}
           <View style={styles.levelContainer}>
@@ -179,6 +186,26 @@ export default function ProfileScreen() {
             />
           </View>
         </Animated.View>
+
+        {/* Register CTA for anonymous users */}
+        {isAnonymous(user) && (
+          <TouchableOpacity
+            style={styles.registerCard}
+            onPress={() => router.push('/(auth)/register')}
+            activeOpacity={0.9}
+          >
+            <View style={styles.registerIcon}>
+              <Icon name="user-plus" size={24} color={theme.colors.primary} weight="duotone" />
+            </View>
+            <View style={styles.registerInfo}>
+              <Text style={styles.registerTitle}>Crea tu cuenta</Text>
+              <Text style={styles.registerSubtitle}>
+                Guarda tu progreso, compite con amigos y accede desde cualquier dispositivo
+              </Text>
+            </View>
+            <Icon name="caret-right" size={20} color={theme.colors.primary} />
+          </TouchableOpacity>
+        )}
 
         {/* Quick Stats */}
         <View style={styles.statsRow}>
@@ -234,8 +261,8 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Premium Card */}
-        {!user?.isPremium && (
+        {/* Premium Card - only for registered non-premium users */}
+        {!isAnonymous(user) && !user?.isPremium && (
           <TouchableOpacity
             style={styles.premiumCard}
             onPress={() => Alert.alert('Premium', 'Próximamente')}
@@ -286,15 +313,36 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Logout Button */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={0.8}
-        >
-          <Icon name="sign-out" size={20} color={theme.colors.states.error} />
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
-        </TouchableOpacity>
+        {/* Logout Button for registered users, Auth buttons for anonymous */}
+        {isAnonymous(user) ? (
+          <View style={styles.authButtonsContainer}>
+            <TouchableOpacity
+              style={styles.authButton}
+              onPress={() => router.push('/(auth)/register')}
+              activeOpacity={0.8}
+            >
+              <Icon name="user-plus" size={20} color="#FFFFFF" />
+              <Text style={styles.authButtonText}>Registrarse</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.authButtonSecondary}
+              onPress={() => router.push('/(auth)/login')}
+              activeOpacity={0.8}
+            >
+              <Icon name="sign-in" size={20} color={theme.colors.primary} />
+              <Text style={styles.authButtonSecondaryText}>Iniciar sesion</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Icon name="sign-out" size={20} color={theme.colors.states.error} />
+            <Text style={styles.logoutText}>Cerrar sesión</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -491,6 +539,78 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.body,
     fontSize: theme.typography.fontSize.sm,
     color: 'rgba(255, 255, 255, 0.8)',
+  },
+  registerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary + '10',
+    borderRadius: theme.borderRadius.xl,
+    borderWidth: 2,
+    borderColor: theme.colors.primary + '30',
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  registerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.primary + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  registerInfo: {
+    flex: 1,
+  },
+  registerTitle: {
+    fontFamily: theme.typography.fontFamily.heading,
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: '600',
+    color: theme.colors.text.primary.light,
+    marginBottom: 2,
+  },
+  registerSubtitle: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary.light,
+    lineHeight: 18,
+  },
+  authButtonsContainer: {
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.md,
+  },
+  authButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+    ...theme.shadows.medium,
+  },
+  authButtonText: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.base,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  authButtonSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.background.light.card,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  authButtonSecondaryText: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
   logoutButton: {
     flexDirection: 'row',

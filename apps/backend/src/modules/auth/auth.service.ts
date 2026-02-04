@@ -31,22 +31,28 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
 
       this.logger.log('Creating user in database...');
+      const now = new Date();
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
           password: hashedPassword,
           firstName: dto.firstName,
           lastName: dto.lastName,
-          lastActiveAt: new Date(),
+          lastActiveAt: now,
         },
         select: {
           id: true,
           email: true,
           firstName: true,
           lastName: true,
+          avatarUrl: true,
           xp: true,
           level: true,
           streak: true,
+          lastActiveAt: true,
+          glucoseUnit: true,
+          isPremium: true,
+          rexCustomization: true,
           createdAt: true,
         },
       });
@@ -55,7 +61,10 @@ export class AuthService {
       const tokens = await this.generateTokens(user.id, user.email);
 
       return {
-        user,
+        user: {
+          ...user,
+          lastStreakDate: user.lastActiveAt ? user.lastActiveAt.toISOString().split('T')[0] : null,
+        },
         ...tokens,
       };
     } catch (error) {
@@ -79,20 +88,24 @@ export class AuthService {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    // Update last active
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastActiveAt: new Date() },
-    });
+    // Note: We do NOT update lastActiveAt on login - it should only be updated
+    // when the user performs a streak-contributing action (like logging glucose)
+    // This preserves the correct lastStreakDate for streak calculations
 
     const userResponse = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
       xp: user.xp,
       level: user.level,
       streak: user.streak,
+      lastStreakDate: user.lastActiveAt ? user.lastActiveAt.toISOString().split('T')[0] : null,
+      glucoseUnit: user.glucoseUnit,
+      isPremium: user.isPremium,
+      rexCustomization: user.rexCustomization,
+      createdAt: user.createdAt,
     };
 
     const tokens = await this.generateTokens(user.id, user.email);
@@ -121,6 +134,7 @@ export class AuthService {
         xp: true,
         level: true,
         streak: true,
+        lastActiveAt: true,
         glucoseUnit: true,
         theme: true,
         language: true,
@@ -135,7 +149,10 @@ export class AuthService {
       throw new NotFoundException("User not found");
     }
 
-    return user;
+    return {
+      ...user,
+      lastStreakDate: user.lastActiveAt ? user.lastActiveAt.toISOString().split('T')[0] : null,
+    };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -151,10 +168,18 @@ export class AuthService {
         xp: true,
         level: true,
         streak: true,
+        lastActiveAt: true,
+        glucoseUnit: true,
+        isPremium: true,
+        rexCustomization: true,
+        createdAt: true,
       },
     });
 
-    return user;
+    return {
+      ...user,
+      lastStreakDate: user.lastActiveAt ? user.lastActiveAt.toISOString().split('T')[0] : null,
+    };
   }
 
   async refreshToken(userId: string, refreshToken: string) {
@@ -173,10 +198,45 @@ export class AuthService {
     return { accessToken };
   }
 
+  async refreshTokenFromBody(refreshToken: string) {
+    this.logger.debug(`[AuthService] refreshTokenFromBody called`);
+
+    try {
+      const refreshSecret = this.configService.get<string>("JWT_REFRESH_SECRET");
+      const payload = this.jwtService.verify(refreshToken, { secret: refreshSecret });
+
+      this.logger.debug(`[AuthService] Refresh token payload: ${JSON.stringify(payload)}`);
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!user) {
+        this.logger.error(`[AuthService] User not found for refresh token`);
+        throw new UnauthorizedException("Invalid refresh token");
+      }
+
+      const newPayload = { sub: user.id, email: user.email };
+      const accessToken = this.jwtService.sign(newPayload);
+
+      this.logger.debug(`[AuthService] New access token generated for user ${user.id}`);
+
+      return { accessToken };
+    } catch (error) {
+      this.logger.error(`[AuthService] Refresh token validation failed: ${error.message}`);
+      throw new UnauthorizedException("Invalid or expired refresh token");
+    }
+  }
+
   private async generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
+    this.logger.debug(`[AuthService] generateTokens - payload: ${JSON.stringify(payload)}`);
+
+    const jwtSecret = this.configService.get<string>("JWT_SECRET");
+    this.logger.debug(`[AuthService] generateTokens - JWT_SECRET present: ${!!jwtSecret}, length: ${jwtSecret?.length}`);
 
     const accessToken = this.jwtService.sign(payload);
+    this.logger.debug(`[AuthService] generateTokens - accessToken generated (first 50 chars): ${accessToken.substring(0, 50)}...`);
 
     const refreshSecret = this.configService.get<string>("JWT_REFRESH_SECRET");
     const refreshExpiresIn = this.configService.get<string>("JWT_REFRESH_EXPIRES_IN") || "7d";

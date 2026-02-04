@@ -2,6 +2,7 @@ import { Injectable, Inject, forwardRef } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { AddXpDto } from "./dto/gamification.dto";
 import { AchievementsService } from "../achievements/achievements.service";
+import { GAMIFICATION } from "@rangexp/types";
 
 @Injectable()
 export class GamificationService {
@@ -129,7 +130,7 @@ export class GamificationService {
 
   async onGlucoseLogged(userId: string, readingId: string) {
     // Add XP for logging glucose
-    await this.addXp(userId, { amount: 5, reason: "LOG_READING" });
+    await this.addXp(userId, { amount: GAMIFICATION.XP.GLUCOSE_LOG, reason: "LOG_READING" });
 
     // Update streak
     const streakResult = await this.updateStreak(userId);

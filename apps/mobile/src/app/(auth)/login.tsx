@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { theme } from '@rangexp/theme';
 import { useSafeArea } from '../../components/SafeScreen';
 import { useLogin } from '../../hooks/useUser';
-import { useUserStore } from '../../store';
+import { useAppStore } from '../../store';
 import { Rex } from '../../components/Rex';
 import { Icon } from '../../components/Icon';
 
@@ -22,7 +22,10 @@ export default function LoginScreen() {
   const router = useRouter();
   const { insets } = useSafeArea();
   const loginMutation = useLogin();
-  const { setUser } = useUserStore();
+  const { hasCompletedOnboarding } = useAppStore();
+
+  // If onboarding is completed, user came from the app (as anonymous) and can go back
+  const canGoBack = hasCompletedOnboarding;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -122,6 +125,18 @@ export default function LoginScreen() {
             },
           ]}
         >
+          {/* Back Button (only show if user can go back to app) */}
+          {canGoBack && (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Icon name="arrow-left" size={20} color={theme.colors.text.primary.light} />
+              <Text style={styles.backButtonText}>Volver</Text>
+            </TouchableOpacity>
+          )}
+
           {/* Rex Header */}
           <View style={styles.rexContainer}>
             <Rex
@@ -289,6 +304,20 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.xl,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: theme.spacing.md,
+    padding: theme.spacing.sm,
+    marginLeft: -theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
+  backButtonText: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.text.primary.light,
   },
   rexContainer: {
     alignItems: 'center',

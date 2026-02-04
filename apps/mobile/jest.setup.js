@@ -27,16 +27,31 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-// Mock expo-av (Video component)
-jest.mock('expo-av', () => ({
-  Video: 'Video',
-  ResizeMode: {
-    CONTAIN: 'contain',
-    COVER: 'cover',
-    STRETCH: 'stretch',
+// Mock expo-video
+jest.mock('expo-video', () => ({
+  VideoView: 'VideoView',
+  useVideoPlayer: () => ({
+    play: jest.fn(),
+    pause: jest.fn(),
+    loop: true,
+    muted: true,
+  }),
+}));
+
+// Mock expo-haptics
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  selectionAsync: jest.fn(),
+  ImpactFeedbackStyle: {
+    Light: 'light',
+    Medium: 'medium',
+    Heavy: 'heavy',
   },
-  Audio: {
-    setAudioModeAsync: jest.fn(),
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
   },
 }));
 

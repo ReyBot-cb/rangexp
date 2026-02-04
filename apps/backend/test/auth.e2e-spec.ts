@@ -90,6 +90,38 @@ describe("Auth E2E Tests", () => {
       expect(response.body).toHaveProperty("refreshToken");
     });
 
+    it("should return user data with lastStreakDate", async () => {
+      const response = await request(app.getHttpServer())
+        .post("/auth/login")
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+        })
+        .expect(200);
+
+      expect(response.body.user).toHaveProperty("lastStreakDate");
+      expect(response.body.user).toHaveProperty("xp");
+      expect(response.body.user).toHaveProperty("streak");
+      expect(response.body.user).toHaveProperty("level");
+    });
+
+    it("should return user gamification data", async () => {
+      const response = await request(app.getHttpServer())
+        .post("/auth/login")
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+        })
+        .expect(200);
+
+      expect(typeof response.body.user.xp).toBe("number");
+      expect(typeof response.body.user.streak).toBe("number");
+      expect(typeof response.body.user.level).toBe("number");
+      expect(response.body.user.xp).toBeGreaterThanOrEqual(0);
+      expect(response.body.user.streak).toBeGreaterThanOrEqual(0);
+      expect(response.body.user.level).toBeGreaterThanOrEqual(1);
+    });
+
     it("should reject invalid password", async () => {
       await request(app.getHttpServer())
         .post("/auth/login")
@@ -107,6 +139,53 @@ describe("Auth E2E Tests", () => {
           email: "nonexistent@example.com",
           password: "somepassword",
         })
+        .expect(401);
+    });
+  });
+
+  describe("GET /auth/profile", () => {
+    let accessToken: string;
+
+    beforeAll(async () => {
+      const response = await request(app.getHttpServer())
+        .post("/auth/login")
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+        });
+      accessToken = response.body.accessToken;
+    });
+
+    it("should return user profile with lastStreakDate", async () => {
+      const response = await request(app.getHttpServer())
+        .get("/auth/profile")
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty("lastStreakDate");
+      expect(response.body).toHaveProperty("xp");
+      expect(response.body).toHaveProperty("streak");
+      expect(response.body).toHaveProperty("level");
+      expect(response.body).toHaveProperty("glucoseUnit");
+      expect(response.body).toHaveProperty("isPremium");
+    });
+
+    it("should return lastStreakDate as date string or null", async () => {
+      const response = await request(app.getHttpServer())
+        .get("/auth/profile")
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(200);
+
+      const lastStreakDate = response.body.lastStreakDate;
+      if (lastStreakDate !== null) {
+        // Should be in YYYY-MM-DD format
+        expect(lastStreakDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      }
+    });
+
+    it("should reject unauthenticated request", async () => {
+      await request(app.getHttpServer())
+        .get("/auth/profile")
         .expect(401);
     });
   });

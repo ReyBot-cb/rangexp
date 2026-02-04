@@ -1,4 +1,19 @@
 // RangeXp Shared Types
+
+// ==========================================
+// Gamification Constants (centralized)
+// ==========================================
+export const GAMIFICATION = {
+  XP: {
+    GLUCOSE_LOG: 10,        // XP for logging a glucose reading
+    STREAK_BONUS: 5,        // Extra XP per streak day (future use)
+    ACHIEVEMENT_BASE: 50,   // Base XP for achievements
+  },
+  LEVELS: {
+    XP_PER_LEVEL: 100,      // XP needed per level
+  },
+} as const;
+
 export interface User {
   id: string;
   email: string;
@@ -14,6 +29,7 @@ export interface User {
   language: "ES" | "EN";
   rexCustomization: string;
   createdAt: string;
+  lastStreakDate: string | null; // ISO date string of last streak-contributing activity
 }
 
 export interface GlucoseReading {

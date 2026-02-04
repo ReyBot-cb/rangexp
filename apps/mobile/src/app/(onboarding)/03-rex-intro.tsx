@@ -4,24 +4,7 @@ import { useRouter } from 'expo-router';
 import { theme } from '@rangexp/theme';
 import { useSafeArea } from '../../components/SafeScreen';
 import { Rex, RexMood } from '../../components/Rex';
-
-// Progress indicator component
-function ProgressDots({ current, total }: { current: number; total: number }) {
-  return (
-    <View style={styles.dotsContainer}>
-      {Array.from({ length: total }).map((_, index) => (
-        <View
-          key={index}
-          style={[
-            styles.dot,
-            index === current && styles.dotActive,
-            index < current && styles.dotCompleted,
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
+import { ProgressDots } from '../../components/onboarding';
 
 const rexStates: { mood: RexMood; message: string; description: string }[] = [
   {
@@ -84,7 +67,7 @@ export default function RexIntroScreen() {
   }, []);
 
   const handleContinue = () => {
-    router.replace('/(onboarding)/04-first-action');
+    router.replace('/(onboarding)/04-features');
   };
 
   const handlePressIn = () => {
@@ -101,7 +84,7 @@ export default function RexIntroScreen() {
     <View style={styles.container}>
       {/* Progress */}
       <View style={[styles.header, { paddingTop: insets.top + theme.spacing.md }]}>
-        <ProgressDots current={2} total={4} />
+        <ProgressDots current={2} total={6} />
       </View>
 
       {/* Rex */}
@@ -230,23 +213,6 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.colors.background.light.secondary,
-  },
-  dotActive: {
-    width: 24,
-    backgroundColor: theme.colors.primary,
-  },
-  dotCompleted: {
-    backgroundColor: theme.colors.primaryLight,
   },
   rexContainer: {
     alignItems: 'center',
