@@ -133,7 +133,6 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
                           errorMessage === 'Unauthorized';
 
     if (isTokenExpired) {
-      console.log('[apiClient] Token expired, attempting refresh...');
 
       // Prevent multiple simultaneous refresh attempts
       if (!isRefreshing) {

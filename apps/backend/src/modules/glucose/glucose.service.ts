@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateGlucoseDto, UpdateGlucoseDto, GlucoseQueryDto } from "./dto/glucose.dto";
+import { GamificationService } from "../gamification/gamification.service";
 
 @Injectable()
 export class GlucoseService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private gamificationService: GamificationService,
+  ) {}
 
   async create(userId: string, dto: CreateGlucoseDto) {
     const reading = await this.prisma.glucoseReading.create({
@@ -17,6 +21,9 @@ export class GlucoseService {
         context: dto.context,
       },
     });
+
+    // Award XP and update streak for logging glucose
+    await this.gamificationService.onGlucoseLogged(userId, reading.id);
 
     return reading;
   }

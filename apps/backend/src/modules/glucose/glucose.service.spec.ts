@@ -1,11 +1,13 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { GlucoseService } from "./glucose.service";
 import { PrismaService } from "../../prisma/prisma.service";
+import { GamificationService } from "../gamification/gamification.service";
 import { NotFoundException, ForbiddenException } from "@nestjs/common";
 
 describe("GlucoseService", () => {
   let service: GlucoseService;
   let prisma: jest.Mocked<PrismaService>;
+  let gamificationService: jest.Mocked<GamificationService>;
 
   const mockPrisma = {
     glucoseReading: {
@@ -18,22 +20,28 @@ describe("GlucoseService", () => {
     },
   };
 
+  const mockGamificationService = {
+    onGlucoseLogged: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GlucoseService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: GamificationService, useValue: mockGamificationService },
       ],
     }).compile();
 
     service = module.get<GlucoseService>(GlucoseService);
     prisma = module.get(PrismaService);
+    gamificationService = module.get(GamificationService);
 
     jest.clearAllMocks();
   });
 
   describe("create", () => {
-    it("should create a glucose reading", async () => {
+    it("should create a glucose reading and award XP", async () => {
       const mockReading = {
         id: "reading-1",
         userId: "user-1",
@@ -45,6 +53,7 @@ describe("GlucoseService", () => {
       };
 
       mockPrisma.glucoseReading.create.mockResolvedValue(mockReading);
+      mockGamificationService.onGlucoseLogged.mockResolvedValue({ streak: 1, streakChanged: true });
 
       const result = await service.create("user-1", {
         value: 120,
@@ -55,6 +64,29 @@ describe("GlucoseService", () => {
 
       expect(result.value).toBe(120);
       expect(result.userId).toBe("user-1");
+      expect(mockGamificationService.onGlucoseLogged).toHaveBeenCalledWith("user-1", "reading-1");
+    });
+
+    it("should call gamification service after creating reading", async () => {
+      const mockReading = {
+        id: "reading-123",
+        userId: "user-1",
+        value: 100,
+        unit: "MG_DL",
+        recordedAt: new Date(),
+        context: "FASTING",
+      };
+
+      mockPrisma.glucoseReading.create.mockResolvedValue(mockReading);
+      mockGamificationService.onGlucoseLogged.mockResolvedValue({ streak: 5, streakChanged: false });
+
+      await service.create("user-1", {
+        value: 100,
+        context: "FASTING" as any,
+      });
+
+      expect(mockGamificationService.onGlucoseLogged).toHaveBeenCalledTimes(1);
+      expect(mockGamificationService.onGlucoseLogged).toHaveBeenCalledWith("user-1", "reading-123");
     });
   });
 
