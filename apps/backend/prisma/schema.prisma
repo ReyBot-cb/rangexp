@@ -31,6 +31,7 @@ model User {
   avatarUrl        String?
   xp               Int      @default(0)           // Total XP
   streak           Int      @default(0)           // Current streak days
+  previousStreak   Int      @default(0)           // Streak before it was lost (for recovery)
   lastActiveAt     DateTime?                      // Last activity timestamp
   level            Int      @default(1)           // User level based on XP
   glucoseUnit      GlucoseUnit @default(MG_DL)
@@ -74,10 +75,29 @@ model Achievement {
   xpReward    Int      @default(0)
   iconUrl     String?
   tier        String   @default("bronze")  // bronze, silver, gold, platinum
+  category    String   @default("REGISTROS")  // REGISTROS, RACHAS, NIVELES, SOCIAL, CONTEXTOS, CONTROL, ESPECIALES
   condition   Json     // JSON condition for unlocking
   createdAt   DateTime @default(now())
 
-  users       UserAchievement[]
+  users          UserAchievement[]
+  processingLogs AchievementProcessingLog[]
+}
+
+model AchievementProcessingLog {
+  id             String    @id @default(cuid())
+  achievementId  String
+  status         String    @default("pending")  // pending, processing, completed, failed
+  totalUsers     Int       @default(0)
+  processedUsers Int       @default(0)
+  awardedCount   Int       @default(0)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+
+  achievement    Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@index([achievementId, status])
 }
 
 model UserAchievement {

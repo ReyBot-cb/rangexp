@@ -10,6 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { theme } from '@rangexp/theme';
 import { useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
@@ -103,6 +104,8 @@ export default function ProfileScreen() {
           } catch (error) {
             console.log('API logout failed, proceeding with local logout');
           }
+          // Haptic feedback on logout
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.replace('/(auth)/login');
         },
       },

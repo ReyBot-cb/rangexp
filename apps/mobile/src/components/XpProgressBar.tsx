@@ -42,7 +42,7 @@ export function XpProgressBar({
 
       const listenerId = hapticFeedback
         ? animatedProgress.addListener(({ value }) => {
-            const currentThreshold = Math.floor(value * 10);
+            const currentThreshold = Math.floor(value * 20);
             if (currentThreshold > lastHapticThreshold.current) {
               lastHapticThreshold.current = currentThreshold;
               triggerProgressHaptic();

@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { theme } from '@rangexp/theme';
 import { useSafeArea } from '../../components/SafeScreen';
 import { useRegister } from '../../hooks/useUser';
@@ -85,6 +86,8 @@ export default function RegisterScreen() {
 
     try {
       await registerMutation.mutateAsync({ email, password, name });
+      // Haptic feedback on successful registration
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(app)');
     } catch (err) {
       setError('Error al crear la cuenta. Inténtalo de nuevo.');

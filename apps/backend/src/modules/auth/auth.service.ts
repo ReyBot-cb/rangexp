@@ -150,8 +150,10 @@ export class AuthService {
     }
 
     return {
-      ...user,
-      lastStreakDate: user.lastActiveAt ? user.lastActiveAt.toISOString().split('T')[0] : null,
+      user: {
+        ...user,
+        lastStreakDate: user.lastActiveAt ? user.lastActiveAt.toISOString().split('T')[0] : null,
+      },
     };
   }
 
@@ -177,8 +179,10 @@ export class AuthService {
     });
 
     return {
-      ...user,
-      lastStreakDate: user.lastActiveAt ? user.lastActiveAt.toISOString().split('T')[0] : null,
+      user: {
+        ...user,
+        lastStreakDate: user.lastActiveAt ? user.lastActiveAt.toISOString().split('T')[0] : null,
+      },
     };
   }
 

@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { theme } from '@rangexp/theme';
 import { useSafeArea } from '../../components/SafeScreen';
 import { useLogin } from '../../hooks/useUser';
@@ -75,6 +76,8 @@ export default function LoginScreen() {
       console.log('API URL:', process.env.EXPO_PUBLIC_API_BASE_URL);
       await loginMutation.mutateAsync({ email, password });
       clearTimeout(timeoutId);
+      // Haptic feedback on successful login
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(app)');
     } catch (err: any) {
       clearTimeout(timeoutId);

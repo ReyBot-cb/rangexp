@@ -12,13 +12,13 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { theme } from '@rangexp/theme';
 import { GAMIFICATION } from '@rangexp/types';
 import { useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
 import { Icon, IconName } from '../../components/Icon';
 import { useAddGlucose } from '../../hooks/useGlucose';
-import { useUserStore } from '../../store';
 import { GlucoseStatus, GlucoseContext } from '../../store/glucoseStore';
 
 const contexts: { id: string; label: string; icon: IconName }[] = [
@@ -32,7 +32,6 @@ const contexts: { id: string; label: string; icon: IconName }[] = [
 export default function LogScreen() {
   const router = useRouter();
   const addGlucose = useAddGlucose();
-  const { user, addXp } = useUserStore();
 
   const [value, setValue] = useState('');
   const [selectedContext, setSelectedContext] = useState('fasting');
@@ -106,7 +105,11 @@ export default function LogScreen() {
         notes: notes || undefined,
       });
 
-      addXp(GAMIFICATION.XP.GLUCOSE_LOG);
+      // XP is added by the backend, no need to add locally
+      // The user query is invalidated in useAddGlucose to refresh data
+
+      // Haptic feedback on successful save
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       // Clear form state and navigate back
       setValue('');

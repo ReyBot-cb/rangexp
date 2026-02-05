@@ -162,8 +162,8 @@ describe("AuthService", () => {
 
       const result = await service.getProfile("user-1");
 
-      expect(result.id).toBe("user-1");
-      expect(result.email).toBe("test@test.com");
+      expect(result.user.id).toBe("user-1");
+      expect(result.user.email).toBe("test@test.com");
     });
   });
 });

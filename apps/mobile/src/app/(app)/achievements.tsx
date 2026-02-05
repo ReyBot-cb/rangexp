@@ -13,27 +13,17 @@ import { theme } from '@rangexp/theme';
 import { useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
 import { Icon, IconName } from '../../components/Icon';
-import { AchievementBadge } from '../../components/AchievementBadge';
-import { useAchievements, useAchievementCategories } from '../../hooks/useAchievements';
-
-interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  unlocked: boolean;
-  unlockedAt?: string;
-  progress?: number;
-  targetValue: number;
-  currentValue: number;
-}
+import { AchievementCard } from '../../components/AchievementCard';
+import { useAchievements, useAchievementCategories, type Achievement } from '../../hooks/useAchievements';
 
 const categoryIcons: Record<string, IconName> = {
-  streaks: 'fire',
-  glucose: 'drop',
-  consistency: 'calendar',
-  special: 'star',
+  registros: 'chart-line',
+  rachas: 'fire',
+  niveles: 'chart-line-up',
+  social: 'users',
+  contextos: 'calendar',
+  control: 'target',
+  especiales: 'star',
 };
 
 export default function AchievementsScreen() {
@@ -83,26 +73,24 @@ export default function AchievementsScreen() {
     setRefreshing(false);
   };
 
-  const filteredAchievements = selectedCategory
-    ? achievements?.filter((a: Achievement) => {
-        if (selectedCategory === 'streaks')
-          return a.id.includes('streak') || a.id.includes('day');
-        if (selectedCategory === 'glucose')
-          return a.id.includes('glucose') || a.id.includes('reading');
-        if (selectedCategory === 'consistency')
-          return a.id.includes('week') || a.id.includes('month');
-        if (selectedCategory === 'special')
-          return (
-            !a.id.includes('streak') &&
-            !a.id.includes('day') &&
-            !a.id.includes('glucose') &&
-            !a.id.includes('reading') &&
-            !a.id.includes('week') &&
-            !a.id.includes('month')
-          );
-        return true;
-      })
-    : achievements;
+  // Find the selected category to get its achievements
+  const selectedCategoryData = selectedCategory
+    ? categories.find((c) => c.id === selectedCategory)
+    : null;
+
+  // Get last 3 unlocked achievements (sorted by unlockedAt, most recent first)
+  const recentUnlockedAchievements = achievements
+    ?.filter((a: Achievement) => a.unlocked && a.unlockedAt)
+    .sort((a: Achievement, b: Achievement) =>
+      new Date(b.unlockedAt!).getTime() - new Date(a.unlockedAt!).getTime()
+    )
+    .slice(0, 3) || [];
+
+  // When a category is selected, show all achievements from that category
+  // Otherwise show only the last 3 unlocked
+  const filteredAchievements = selectedCategory && selectedCategoryData
+    ? selectedCategoryData.achievements
+    : recentUnlockedAchievements;
 
   const totalUnlocked = achievements?.filter((a: Achievement) => a.unlocked).length || 0;
   const total = achievements?.length || 0;
@@ -261,9 +249,13 @@ export default function AchievementsScreen() {
           <Text style={styles.sectionTitle}>
             {selectedCategory
               ? categories.find((c) => c.id === selectedCategory)?.name || 'Logros'
-              : 'Todos los logros'}
+              : 'Últimos logros'}
           </Text>
-          <Text style={styles.sectionCount}>{filteredAchievements?.length || 0} logros</Text>
+          <Text style={styles.sectionCount}>
+            {selectedCategory
+              ? `${filteredAchievements?.length || 0} logros`
+              : `${recentUnlockedAchievements.length} de ${totalUnlocked} obtenidos`}
+          </Text>
         </View>
 
         {/* Achievements Grid */}
@@ -283,14 +275,15 @@ export default function AchievementsScreen() {
                 ],
               }}
             >
-              <AchievementBadge
-                icon={achievement.icon}
+              <AchievementCard
+                icon={achievement.icon as IconName}
                 name={achievement.name}
+                description={achievement.description}
                 rarity={achievement.rarity}
                 unlocked={achievement.unlocked}
-                description={achievement.unlocked ? achievement.description : undefined}
+                unlockedAt={achievement.unlockedAt}
                 progress={achievement.progress}
-                size="medium"
+                xpReward={achievement.xpReward}
               />
             </Animated.View>
           ))}
@@ -299,8 +292,21 @@ export default function AchievementsScreen() {
         {/* Empty State */}
         {filteredAchievements?.length === 0 && (
           <View style={styles.emptyState}>
-            <Icon name="magnifying-glass" size={48} color={theme.colors.text.disabled.light} />
-            <Text style={styles.emptyText}>No hay logros en esta categoría</Text>
+            <Icon
+              name={selectedCategory ? 'magnifying-glass' : 'trophy'}
+              size={48}
+              color={theme.colors.text.disabled.light}
+            />
+            <Text style={styles.emptyText}>
+              {selectedCategory
+                ? 'No hay logros en esta categoría'
+                : '¡Aún no has desbloqueado logros!'}
+            </Text>
+            {!selectedCategory && (
+              <Text style={styles.emptySubtext}>
+                Registra tu glucosa para empezar a ganar logros
+              </Text>
+            )}
           </View>
         )}
 
@@ -497,7 +503,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing.sm,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     marginBottom: theme.spacing.xl,
   },
   emptyState: {
@@ -509,6 +515,13 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text.secondary.light,
     marginTop: theme.spacing.md,
+  },
+  emptySubtext: {
+    fontFamily: theme.typography.fontFamily.body,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.disabled.light,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
   },
   statsSection: {
     marginBottom: theme.spacing.lg,

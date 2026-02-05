@@ -49,4 +49,19 @@ export class GamificationController {
       streak: levelInfo.currentLevel, // Placeholder, streak comes from user profile
     };
   }
+
+  @Get("streak/recovery")
+  @ApiOperation({ summary: "Check if user can recover their lost streak (Premium)" })
+  @ApiResponse({ status: 200, description: "Streak recovery status" })
+  async getStreakRecoveryStatus(@Request() req) {
+    return this.gamificationService.getStreakRecoveryStatus(req.user.id);
+  }
+
+  @Post("streak/recover")
+  @ApiOperation({ summary: "Recover a lost streak (Premium only)" })
+  @ApiResponse({ status: 200, description: "Streak recovered successfully" })
+  @ApiResponse({ status: 400, description: "Cannot recover streak" })
+  async recoverStreak(@Request() req) {
+    return this.gamificationService.recoverStreak(req.user.id);
+  }
 }

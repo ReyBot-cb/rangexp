@@ -233,5 +233,178 @@ describe("GamificationService", () => {
 
       expect(result.streak).toBe(101);
     });
+
+    it("should indicate when streak is lost", async () => {
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 5,
+        lastActiveAt: twoDaysAgo,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        lastActiveAt: new Date(),
+      });
+
+      const result = await service.updateStreak("user-1");
+
+      expect(result.streakLost).toBe(true);
+    });
+
+    it("should set streak to 1 when streak is 0 but lastActiveAt exists (same day)", async () => {
+      const today = new Date();
+      today.setHours(today.getHours() - 2);
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 0,
+        lastActiveAt: today,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        lastActiveAt: new Date(),
+      });
+
+      const result = await service.updateStreak("user-1");
+
+      expect(result.streak).toBe(1);
+      expect(result.streakChanged).toBe(true);
+    });
+  });
+
+  describe("recoverStreak", () => {
+    it("should recover streak for premium users", async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        previousStreak: 10,
+        lastActiveAt: yesterday,
+        isPremium: true,
+        premiumExpiresAt: null,
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        id: "user-1",
+        streak: 11,
+        lastActiveAt: new Date(),
+      });
+
+      const result = await service.recoverStreak("user-1");
+
+      expect(result.streak).toBe(11);
+      expect(result.recovered).toBe(true);
+    });
+
+    it("should reject recovery for non-premium users", async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        previousStreak: 10,
+        lastActiveAt: new Date(),
+        isPremium: false,
+        premiumExpiresAt: null,
+      });
+
+      await expect(service.recoverStreak("user-1")).rejects.toThrow(
+        "Premium subscription required to recover streak"
+      );
+    });
+
+    it("should reject recovery when no previous streak exists", async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        previousStreak: 0,
+        lastActiveAt: new Date(),
+        isPremium: true,
+        premiumExpiresAt: null,
+      });
+
+      await expect(service.recoverStreak("user-1")).rejects.toThrow(
+        "No streak available to recover"
+      );
+    });
+
+    it("should reject recovery after 3 days window expires", async () => {
+      const fourDaysAgo = new Date();
+      fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        previousStreak: 10,
+        lastActiveAt: fourDaysAgo,
+        isPremium: true,
+        premiumExpiresAt: null,
+      });
+
+      await expect(service.recoverStreak("user-1")).rejects.toThrow(
+        "Recovery window expired (max 3 days)"
+      );
+    });
+
+    it("should reject recovery when premium has expired", async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const expiredDate = new Date();
+      expiredDate.setDate(expiredDate.getDate() - 1);
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        previousStreak: 10,
+        lastActiveAt: yesterday,
+        isPremium: true,
+        premiumExpiresAt: expiredDate,
+      });
+
+      await expect(service.recoverStreak("user-1")).rejects.toThrow(
+        "Premium subscription required to recover streak"
+      );
+    });
+  });
+
+  describe("getStreakRecoveryStatus", () => {
+    it("should return recovery available for premium with previous streak", async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        previousStreak: 10,
+        lastActiveAt: yesterday,
+        isPremium: true,
+        premiumExpiresAt: null,
+      });
+
+      const result = await service.getStreakRecoveryStatus("user-1");
+
+      expect(result.canRecover).toBe(true);
+      expect(result.previousStreak).toBe(10);
+      expect(result.daysRemaining).toBe(2);
+    });
+
+    it("should return cannot recover for non-premium users", async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: "user-1",
+        streak: 1,
+        previousStreak: 10,
+        lastActiveAt: new Date(),
+        isPremium: false,
+        premiumExpiresAt: null,
+      });
+
+      const result = await service.getStreakRecoveryStatus("user-1");
+
+      expect(result.canRecover).toBe(false);
+      expect(result.isPremium).toBe(false);
+    });
   });
 });

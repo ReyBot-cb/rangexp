@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { theme } from '@rangexp/theme';
 import { SafeScreen, useSafeArea } from '../../components/SafeScreen';
 import { Rex } from '../../components/Rex';
@@ -18,7 +19,8 @@ import { GlucoseCard } from '../../components/GlucoseCard';
 import { XpProgressBar } from '../../components/XpProgressBar';
 import { AchievementBadge } from '../../components/AchievementBadge';
 import { useUserStore } from '../../store';
-import { useGlucoseStore } from '../../store/glucoseStore';
+import { useUser } from '../../hooks/useUser';
+import { useGlucoseReadings } from '../../hooks/useGlucose';
 import { useRecentAchievements } from '../../hooks/useAchievements';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -29,10 +31,14 @@ dayjs.locale('es');
 
 export default function HomeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useUserStore();
-  const { readings, stats, getTodayReadings } = useGlucoseStore();
   const recentAchievements = useRecentAchievements();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch data - this handles both anonymous (local) and registered (backend) users
+  const { refetch: refetchUser } = useUser();
+  const { data: readings = [], refetch: refetchReadings } = useGlucoseReadings();
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -46,14 +52,34 @@ export default function HomeScreen() {
     }).start();
   }, []);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+    try {
+      await Promise.all([
+        refetchUser(),
+        refetchReadings(),
+        queryClient.invalidateQueries({ queryKey: ['achievements'] }),
+      ]);
+    } catch (error) {
+      console.log('Error refreshing:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchUser, refetchReadings, queryClient]);
 
-  const todayReadings = getTodayReadings();
+  // Calculate today's readings from the fetched data
+  const today = new Date().toDateString();
+  const todayReadings = readings.filter(
+    (r) => new Date(r.timestamp).toDateString() === today
+  );
   const latestReading = readings[0];
   const xpProgress = (user?.xp || 0) % 100;
+
+  // Calculate stats from readings
+  const stats = readings.length > 0 ? {
+    average: Math.round(readings.reduce((sum, r) => sum + r.value, 0) / readings.length),
+    timeInRange: Math.round((readings.filter(r => r.status === 'normal').length / readings.length) * 100),
+  } : null;
 
   const getRexMood = () => {
     if (!latestReading) return 'neutral';
